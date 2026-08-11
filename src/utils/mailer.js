@@ -26,6 +26,10 @@ async function getTransporter() {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      // Tránh form "quay mãi" khi SMTP bị firewall/chặn cổng trên cloud.
+      connectionTimeout: 12_000,
+      greetingTimeout: 12_000,
+      socketTimeout: 20_000,
     });
     return cachedTransporter;
   }

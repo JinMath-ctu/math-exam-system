@@ -125,8 +125,8 @@ async function forgotPassword(req, res, next) {
         title: 'Quên mật khẩu',
         formData: req.body,
         errorMessage: error.code === 'MAIL_NOT_CONFIGURED'
-          ? 'Chưa cấu hình Gmail gửi thư. Vui lòng liên hệ quản trị viên.'
-          : 'Không gửi được mã qua Gmail. Vui lòng kiểm tra lại cấu hình Gmail.',
+          ? 'Chưa cấu hình gửi thư (SMTP). Vui lòng liên hệ quản trị viên.'
+          : 'Không gửi được mã qua email. Thử lại sau hoặc kiểm tra cấu hình SMTP (Resend/Gmail).',
       });
     }
     return next(error);
