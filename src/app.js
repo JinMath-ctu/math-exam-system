@@ -12,6 +12,7 @@ const MySQLStore = require('express-mysql-session')(session);
 const methodOverride = require('method-override');
 
 const { pool, testDatabase } = require('./config/database');
+const { ensureDatabaseReady } = require('./config/ensure-database');
 const flashMiddleware = require('./middleware/flash');
 const csrfMiddleware = require('./middleware/csrf');
 const { errorHandler, notFoundHandler } = require('./middleware/error-handler');
@@ -109,6 +110,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 async function startServer() {
+  await ensureDatabaseReady();
   await testDatabase();
 
   const port = Number(process.env.PORT) || 3000;
