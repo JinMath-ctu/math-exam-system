@@ -27,6 +27,7 @@ const apiRoutes = require('./routes/api');
 
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
+const behindProxy = isProduction || Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PUBLIC_DOMAIN);
 const sessionSecret = process.env.SESSION_SECRET || 'math-exam-dev-secret-change-me-2026';
 
 if (isProduction && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32)) {
@@ -35,7 +36,7 @@ if (isProduction && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.l
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.set('trust proxy', isProduction ? 1 : false);
+app.set('trust proxy', behindProxy ? 1 : false);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -118,7 +119,7 @@ async function startServer() {
   return new Promise((resolve) => {
     // 0.0.0.0: cần thiết khi deploy container (Railway/Render/Docker)
     const server = app.listen(port, '0.0.0.0', () => {
-      console.log(`Máy chủ đang chạy tại http://0.0.0.0:${port}`);
+      console.log(`Máy chủ đang chạy tại http://localhost:${port}`);
       startAutoSubmitJob();
       startPasswordResetCleanupJob();
       resolve(server);
