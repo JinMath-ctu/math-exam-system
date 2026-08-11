@@ -41,21 +41,32 @@ async function ensureDatabaseReady() {
     await conn.query(`USE \`${dbName}\``);
 
     const [tables] = await conn.query("SHOW TABLES LIKE 'nguoi_dung'");
-    if (tables.length > 0) {
+    if (tables.length === 0) {
+      const sqlPath = path.join(__dirname, '..', '..', 'database', 'demo-backup.sql');
+      if (!fs.existsSync(sqlPath)) {
+        throw new Error(`Chưa có bảng và không tìm thấy ${sqlPath}`);
+      }
+
+      console.log(`Database '${dbName}' trống — đang nạp demo-backup.sql ...`);
+      const sql = fs.readFileSync(sqlPath, 'utf8');
+      await conn.query(sql);
+      console.log('Đã nạp dữ liệu demo (teacher@ / studenta@ — mật khẩu 123456).');
+    } else {
       console.log(`Database '${dbName}' đã sẵn sàng.`);
-      return { created: false, imported: false };
     }
 
-    const sqlPath = path.join(__dirname, '..', '..', 'database', 'demo-backup.sql');
-    if (!fs.existsSync(sqlPath)) {
-      throw new Error(`Chưa có bảng và không tìm thấy ${sqlPath}`);
-    }
+    // express-mysql-session cần bảng sessions (demo-backup không có).
+    // Store được khởi tạo trước khi DB sẵn sàng nên có thể bỏ lỡ bước tự tạo.
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS \`sessions\` (
+        \`session_id\` varchar(128) NOT NULL,
+        \`expires\` int unsigned NOT NULL,
+        \`data\` mediumtext,
+        PRIMARY KEY (\`session_id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+    `);
 
-    console.log(`Database '${dbName}' trống — đang nạp demo-backup.sql ...`);
-    const sql = fs.readFileSync(sqlPath, 'utf8');
-    await conn.query(sql);
-    console.log('Đã nạp dữ liệu demo (teacher@ / studenta@ — mật khẩu 123456).');
-    return { created: true, imported: true };
+    return { imported: tables.length === 0 };
   } finally {
     await conn.end();
   }
