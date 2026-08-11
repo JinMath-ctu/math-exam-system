@@ -66,6 +66,39 @@ async function ensureDatabaseReady() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
     `);
 
+    // demo-backup cũ có thể thiếu cau_hoi.khoi_lop — code hiện tại cần cột này.
+    const [khoiCols] = await conn.query(
+      `SELECT COUNT(*) AS n
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'cau_hoi' AND COLUMN_NAME = 'khoi_lop'`,
+      [dbName],
+    );
+    if (Number(khoiCols[0].n) === 0) {
+      console.log('Thêm cột cau_hoi.khoi_lop ...');
+      await conn.query(`
+        ALTER TABLE cau_hoi
+          ADD COLUMN khoi_lop TINYINT UNSIGNED NULL
+            COMMENT 'Khối lớp (1–12) để lọc ngân hàng câu hỏi'
+            AFTER chu_de_id
+      `);
+      await conn.query(`
+        ALTER TABLE cau_hoi
+          ADD CONSTRAINT chk_cau_hoi_khoi_lop
+            CHECK (khoi_lop IS NULL OR (khoi_lop BETWEEN 1 AND 12))
+      `).catch(() => {});
+      await conn.query(`
+        ALTER TABLE cau_hoi
+          ADD INDEX idx_cau_hoi_khoi_lop (khoi_lop)
+      `).catch(() => {});
+      await conn.query(`
+        UPDATE cau_hoi ch
+        JOIN chu_de cd ON cd.id = ch.chu_de_id
+        SET ch.khoi_lop = cd.khoi_lop
+        WHERE ch.khoi_lop IS NULL AND cd.khoi_lop IS NOT NULL
+      `);
+      console.log('Đã thêm cau_hoi.khoi_lop.');
+    }
+
     return { imported: tables.length === 0 };
   } finally {
     await conn.end();
