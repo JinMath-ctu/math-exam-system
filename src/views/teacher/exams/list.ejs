@@ -1,0 +1,91 @@
+<%
+const statusLabels = { NHAP: 'Nháp', DA_CONG_BO: 'Đã công bố', DA_HUY: 'Đã hủy' };
+const statusBadge = { NHAP: 'badge-muted', DA_CONG_BO: 'badge-success', DA_HUY: 'badge-archived' };
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Đề thi</h1>
+      <p class="page-lead">Tạo đề nháp, thêm câu hỏi, giao cho lớp và công bố kết quả.</p>
+    </header>
+
+    <div class="toolbar">
+      <form action="/teacher/exams" method="GET" class="filter-form">
+        <div class="form-group">
+          <label for="q">Tìm kiếm</label>
+          <input type="text" id="q" name="q" value="<%= filters.q || '' %>" placeholder="Tên đề thi">
+        </div>
+        <div class="form-group">
+          <label for="trangThai">Trạng thái</label>
+          <select id="trangThai" name="trangThai">
+            <option value="">Tất cả</option>
+            <option value="NHAP" <%= filters.trangThai === 'NHAP' ? 'selected' : '' %>>Nháp</option>
+            <option value="DA_CONG_BO" <%= filters.trangThai === 'DA_CONG_BO' ? 'selected' : '' %>>Đã công bố</option>
+            <option value="DA_HUY" <%= filters.trangThai === 'DA_HUY' ? 'selected' : '' %>>Đã hủy</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Lọc</button>
+      </form>
+      <a href="/teacher/exams/create" class="btn btn-primary">+ Tạo đề thi</a>
+    </div>
+
+    <% if (exams.length === 0) { %>
+      <div class="card empty-state">
+        <p>Chưa có đề thi nào phù hợp. Hãy tạo đề thi đầu tiên của bạn.</p>
+        <a href="/teacher/exams/create" class="btn btn-primary">+ Tạo đề thi</a>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên đề</th>
+              <th>Thời lượng</th>
+              <th>Tổng điểm</th>
+              <th>Mở đề</th>
+              <th>Đóng đề</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% exams.forEach(function(exam) { %>
+              <tr>
+                <td><a href="/teacher/exams/<%= exam.id %>"><%= exam.ten_de %></a></td>
+                <td><%= exam.thoi_luong_phut %> phút</td>
+                <td><%= Number(exam.tong_diem).toFixed(2) %></td>
+                <td><%= formatDateTimeVN(exam.thoi_gian_bat_dau) %></td>
+                <td><%= formatDateTimeVN(exam.thoi_gian_ket_thuc) %></td>
+                <td><span class="badge <%= statusBadge[exam.trang_thai] %>"><%= statusLabels[exam.trang_thai] %></span></td>
+                <td class="table-actions">
+                  <a href="/teacher/exams/<%= exam.id %>" class="btn btn-secondary btn-sm">Xem</a>
+                  <% if (exam.trang_thai === 'NHAP' || exam.trang_thai === 'DA_HUY') { %>
+                    <form action="/teacher/exams/<%= exam.id %>/delete" method="POST" class="inline-form" data-confirm="Xóa vĩnh viễn đề thi này? Nếu đã có lượt làm, điểm và lịch sử liên quan cũng bị xóa.">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (pagination.totalPages > 1) { %>
+        <nav class="pagination" aria-label="Điều hướng trang">
+          <% for (let p = 1; p <= pagination.totalPages; p += 1) { %>
+            <% const query = new URLSearchParams(); if (filters.q) query.set('q', filters.q); if (filters.trangThai) query.set('trangThai', filters.trangThai); query.set('page', p); %>
+            <a class="pagination-link <%= p === pagination.page ? 'is-active' : '' %>" href="?<%= query.toString() %>"><%= p %></a>
+          <% } %>
+        </nav>
+      <% } %>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

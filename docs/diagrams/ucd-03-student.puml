@@ -1,0 +1,68 @@
+@startuml UCD-03-Hoc-sinh
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam linetype ortho
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #334155
+}
+
+actor "Học sinh" as HS
+
+rectangle "Hệ thống JinMath" {
+  package "Tài khoản và lớp học" {
+    usecase "UC-HS-01\nĐăng ký" as UC01
+    usecase "UC-HS-02\nĐăng nhập / Đăng xuất" as UC02
+    usecase "UC-HS-03\nTham gia / rời lớp" as UC03
+  }
+
+  package "Thi trực tuyến" {
+    usecase "UC-HS-04\nXem đề được giao" as UC04
+    usecase "UC-HS-05\nBắt đầu / tiếp tục bài" as UC05
+    usecase "UC-HS-06\nLàm bài" as UC06
+    usecase "UC-HS-07\nLưu đáp án" as UC07
+    usecase "UC-HS-08\nĐánh dấu câu" as UC08
+    usecase "UC-HS-09\nNộp bài" as UC09
+    usecase "Khôi phục bài khi\nrefresh / có mạng lại" as RESTORE
+    usecase "UC-HS-11\nBáo sự cố" as UC11
+  }
+
+  package "Kết quả" {
+    usecase "UC-HS-10\nXem kết quả" as UC10
+  }
+}
+
+HS -- UC01
+HS -- UC02
+HS -- UC03
+HS -- UC04
+HS -- UC05
+HS -- UC06
+HS -- UC08
+HS -- UC09
+HS -- UC10
+HS -- UC11
+
+UC06 ..> UC07 : <<include>>
+UC08 ..> UC06 : <<extend>>
+RESTORE ..> UC06 : <<extend>>
+UC11 ..> UC06 : <<extend>>
+
+note bottom of UC05
+  Tiền điều kiện: thuộc lớp được giao đề,
+  đề đã công bố, trong thời gian mở
+  và chưa vượt số lần làm.
+end note
+
+note bottom of UC09
+  Nộp thủ công hoặc hệ thống tự nộp
+  khi hết hạn hiệu lực.
+end note
+
+note bottom of UC10
+  Chỉ xem khi giáo viên đã công bố kết quả
+  và lượt làm ở trạng thái DA_CHAM.
+end note
+@enduml

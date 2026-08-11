@@ -1,0 +1,41 @@
+sequenceDiagram
+    actor HS as Học sinh
+    actor GV as Giáo viên
+    participant Browser as Trình duyệt
+    participant StuCtrl as student-attempt-controller
+    participant TeaCtrl as teacher-incident-controller
+    participant Svc as incident-service
+    participant DB as MySQL
+
+    Note over HS,DB: 1) Học sinh báo sự cố
+    HS->>Browser: Chọn loại + mô tả (không nhập giây bù)
+    Browser->>StuCtrl: POST /student/attempts/:attemptId/incidents
+    Note over StuCtrl: incidentLimiter + reportIncidentRules
+    StuCtrl->>Svc: reportIncident(...)
+    Svc->>DB: BEGIN + khóa de_thi → luot_lam_bai
+    alt Đã công bố KQ / DA_CHAM / đã có sự cố chờ
+        Svc-->>StuCtrl: CONFLICT
+    else OK
+        Svc->>DB: INSERT su_co_bai_thi (CHO_XAC_NHAN)
+        Note over Svc: loai: MAT_DIEN, MAT_MANG, LOI_TRINH_DUYET,...
+        StuCtrl-->>Browser: Flash đã gửi
+    end
+
+    Note over GV,DB: 2) Giáo viên duyệt + bù giờ
+    GV->>Browser: Nhập so_giay_bu_gio (1..7200)
+    Browser->>TeaCtrl: POST /teacher/incidents/:id/approve
+    TeaCtrl->>Svc: approveIncident(id, giaoVienId, soGiayBuGio)
+    Svc->>DB: BEGIN + khóa de_thi → luot_lam_bai → su_co
+    alt Đã duyệt trước đó
+        Svc-->>TeaCtrl: INCIDENT_ALREADY_REVIEWED (409)
+    else OK
+        Svc->>DB: Cộng thoi_gian_bo_sung_giay (một lần)
+        Svc->>DB: su_co.trang_thai = DA_CHAP_NHAN
+        opt Lượt đang DA_NOP / TU_DONG_NOP — mở lại hợp lệ
+            Svc->>DB: trang_thai = DANG_LAM (reset điểm tự luận nếu cần)
+            Svc->>DB: INSERT nhat_ky_thi (MO_LAI_SAU_SU_CO)
+        end
+        Svc->>DB: COMMIT
+        Note over Svc,DB: han_nop_hieu_luc = han_nop + thoi_gian_bo_sung_giay
+        TeaCtrl-->>Browser: Flash đã duyệt
+    end

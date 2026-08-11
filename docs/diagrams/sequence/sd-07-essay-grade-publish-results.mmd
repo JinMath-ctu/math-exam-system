@@ -1,0 +1,50 @@
+sequenceDiagram
+    actor GV as Giáo viên
+    actor HS as Học sinh
+    participant Browser as Trình duyệt
+    participant GradeCtrl as teacher-attempt-controller
+    participant GradeSvc as grading-service
+    participant ExamCtrl as teacher-exam-controller
+    participant ExamSvc as exam-service
+    participant ResultCtrl as student-result-controller
+    participant ResultSvc as result-service
+    participant DB as MySQL
+
+    Note over GV,DB: 1) Chấm tự luận
+    GV->>Browser: Nhập điểm / nhận xét câu TU_LUAN
+    Browser->>GradeCtrl: POST /teacher/attempts/:attemptId/grade
+    GradeCtrl->>GradeSvc: gradeAttempt(attemptId, giaoVienId, grades)
+    GradeSvc->>DB: FOR UPDATE de_thi + luot_lam_bai
+    alt Đã công bố KQ / còn sự cố chờ / đang DANG_LAM
+        GradeSvc-->>GradeCtrl: CONFLICT / VALIDATION_ERROR
+    else OK
+        GradeSvc->>DB: UPSERT điểm chi_tiet_bai_lam (TU_LUAN)
+        opt Mọi câu tự luận đã chấm
+            GradeSvc->>DB: trang_thai = DA_CHAM
+        end
+        GradeCtrl-->>Browser: Flash đã lưu điểm chấm
+    end
+
+    Note over GV,DB: 2) Công bố kết quả
+    GV->>Browser: Công bố kết quả (+ tùy chọn cho xem đáp án)
+    Browser->>ExamCtrl: POST /teacher/exams/:id/publish-results
+    ExamCtrl->>ExamSvc: publishResults(examId, giaoVienId, body)
+    ExamSvc->>DB: Kiểm tra lượt + sự cố pending
+    alt Chưa đủ điều kiện
+        ExamSvc-->>ExamCtrl: VALIDATION_ERROR (blockers)
+        ExamCtrl-->>Browser: Flash lý do
+    else OK
+        ExamSvc->>DB: da_cong_bo_ket_qua=TRUE, thoi_gian_cong_bo_ket_qua=NOW()
+        ExamCtrl-->>Browser: Flash đã công bố
+    end
+
+    Note over HS,DB: 3) Học sinh xem điểm
+    HS->>Browser: Mở kết quả
+    Browser->>ResultCtrl: GET /student/results/:attemptId
+    ResultCtrl->>ResultSvc: getResultDetail(attemptId, hocSinhId)
+    alt Chưa công bố / chưa DA_CHAM
+        ResultSvc-->>ResultCtrl: RESULTS_NOT_PUBLISHED (422)
+    else OK
+        ResultSvc->>DB: Đọc điểm (+ dap_an nếu cho_xem_dap_an)
+        ResultCtrl-->>Browser: Trang chi tiết kết quả
+    end

@@ -1,0 +1,42 @@
+sequenceDiagram
+    actor HS as Học sinh
+    participant JS as exam-room.js
+    participant Ctrl as attempt-controller
+    participant Svc as attempt-service
+    participant Job as auto-submit-job
+    participant DB as MySQL
+
+    alt Nộp thủ công
+        HS->>JS: Bấm Nộp bài
+        JS->>JS: Flush debounce, chờ save pending/in-flight
+        JS->>Ctrl: POST /api/attempts/:attemptId/submit
+        Note over Ctrl: requireStudent + submitLimiter
+        Ctrl->>Svc: submitAttempt(..., auto=false)
+    else Hết giờ phía client
+        JS->>Ctrl: POST .../submit { autoSubmit:true }
+        Ctrl->>Svc: submitAttempt(..., auto flag)
+    else Job quét quá hạn (mỗi 45 giây)
+        Job->>Svc: submitAttempt(..., auto=true, hocSinhId=null)
+    end
+
+    Svc->>DB: BEGIN + FOR UPDATE luot_lam_bai
+    alt trang_thai != DANG_LAM
+        Svc-->>Ctrl: ATTEMPT_SUBMITTED (409)
+    else Client auto nhưng chưa tới hạn
+        Svc-->>Ctrl: { submitted:false, status:DANG_LAM }
+    else Hợp lệ
+        Svc->>Svc: Chấm MOT_DAP_AN / DUNG_SAI / TRA_LOI_NGAN
+        Svc->>DB: UPDATE chi_tiet_bai_lam (điểm)
+        alt Không còn câu TU_LUAN
+            Svc->>DB: luot_lam_bai.trang_thai = DA_CHAM
+        else Nộp thủ công
+            Svc->>DB: trang_thai = DA_NOP
+        else Nộp tự động
+            Svc->>DB: trang_thai = TU_DONG_NOP
+        end
+        Svc->>DB: INSERT nhat_ky_thi (NOP_BAI / TU_DONG_NOP)
+        Svc->>DB: COMMIT
+        Svc-->>Ctrl: OK
+        Ctrl-->>JS: success
+        JS->>JS: removeItem localStorage
+    end

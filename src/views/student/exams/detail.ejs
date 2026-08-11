@@ -1,0 +1,195 @@
+<%
+const timeStatusLabels = { SAP_MO: 'Chưa mở', DANG_MO: 'Đang mở', DA_DONG: 'Đã đóng' };
+const timeStatusBadge = { SAP_MO: 'badge-muted', DANG_MO: 'badge-success', DA_DONG: 'badge-archived' };
+const attemptStatusLabels = {
+  DANG_LAM: 'Đang làm', DA_NOP: 'Đã nộp', TU_DONG_NOP: 'Đã tự động nộp', DA_CHAM: 'Đã chấm',
+};
+const canStart = exam.trang_thai === 'DA_CONG_BO'
+  && trangThaiThoiGian === 'DANG_MO'
+  && remainingAttempts > 0
+  && !activeAttempt;
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-student') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/student/exams">&larr; Bài thi được giao</a></p>
+
+    <header class="page-header">
+      <div class="card-header-row">
+        <h1><%= exam.ten_de %></h1>
+        <% if (exam.trang_thai === 'DA_HUY') { %>
+          <span class="badge badge-archived">Đã hủy</span>
+        <% } else { %>
+          <span class="badge <%= timeStatusBadge[trangThaiThoiGian] %>"><%= timeStatusLabels[trangThaiThoiGian] %></span>
+        <% } %>
+      </div>
+    </header>
+
+    <%- include('../../partials/flash') %>
+
+    <div class="card">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Thời lượng</span>
+          <span class="detail-value"><%= exam.thoi_luong_phut %> phút</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Tổng điểm</span>
+          <span class="detail-value"><%= Number(exam.tong_diem).toFixed(2) %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Giờ mở đề</span>
+          <span class="detail-value"><%= formatDateTimeVN(exam.thoi_gian_bat_dau) %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Giờ đóng đề</span>
+          <span class="detail-value"><%= formatDateTimeVN(exam.thoi_gian_ket_thuc) %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Số lần được làm</span>
+          <span class="detail-value"><%= exam.so_lan_duoc_lam %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Đã làm / Còn lại</span>
+          <span class="detail-value"><%= attempts.length %> / <%= remainingAttempts %></span>
+        </div>
+      </div>
+
+      <% if (exam.mo_ta) { %><p><%= exam.mo_ta %></p><% } %>
+
+      <div class="card-actions">
+        <% if (activeAttempt) { %>
+          <a href="/student/attempts/<%= activeAttempt.id %>" class="btn btn-primary">Tiếp tục làm bài đang dở</a>
+        <% } else if (canStart) { %>
+          <% classes.forEach(function(cls) { %>
+            <button
+              type="button"
+              class="btn btn-primary start-attempt-btn"
+              data-exam-id="<%= exam.id %>"
+              data-class-id="<%= cls.id %>"
+            ><%= classes.length > 1 ? `Bắt đầu làm bài (lớp ${cls.ten_lop})` : 'Bắt đầu làm bài' %></button>
+          <% }); %>
+        <% } else { %>
+          <p class="field-hint">
+            <% if (exam.trang_thai === 'DA_HUY') { %>
+              Đề thi này đã bị hủy, không thể làm bài.
+            <% } else if (exam.trang_thai !== 'DA_CONG_BO') { %>
+              Đề thi chưa được công bố.
+            <% } else if (trangThaiThoiGian === 'SAP_MO') { %>
+              Chưa đến giờ mở đề, vui lòng quay lại sau.
+            <% } else if (trangThaiThoiGian === 'DA_DONG') { %>
+              Đề thi đã đóng, không thể bắt đầu làm bài mới.
+            <% } else if (remainingAttempts <= 0) { %>
+              Bạn đã sử dụng hết số lần được làm đề thi này.
+            <% } %>
+          </p>
+        <% } %>
+      </div>
+    </div>
+
+      <% if (!exam.da_cong_bo_ket_qua && attempts.some(function(a) { return a.trang_thai !== 'DANG_LAM'; })) { %>
+        <p class="field-hint">Bạn đã nộp bài. Điểm đã được hệ thống ghi nhận nhưng chỉ hiện sau khi giáo viên bấm <strong>Công bố kết quả</strong>.</p>
+      <% } %>
+
+    <h2 class="section-title">Lịch sử làm bài</h2>
+    <% if (attempts.length === 0) { %>
+      <div class="card empty-state">
+        <p>Bạn chưa làm đề thi này lần nào.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Lần</th>
+              <th>Bắt đầu</th>
+              <th>Nộp lúc</th>
+              <th>Trạng thái</th>
+              <th>Điểm</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% attempts.forEach(function(attempt) { %>
+              <tr>
+                <td><%= attempt.lan_thu %></td>
+                <td><%= formatDateTimeVN(attempt.thoi_gian_bat_dau) %></td>
+                <td><%= attempt.thoi_gian_nop ? formatDateTimeVN(attempt.thoi_gian_nop) : '—' %></td>
+                <td>
+                  <% if (attempt.trang_thai === 'DANG_LAM') { %>
+                    <a href="/student/attempts/<%= attempt.id %>" class="badge badge-success">Đang làm</a>
+                  <% } else { %>
+                    <span class="badge badge-muted"><%= attemptStatusLabels[attempt.trang_thai] || attempt.trang_thai %></span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (exam.da_cong_bo_ket_qua) { %>
+                    <%= Number(attempt.tong_diem).toFixed(2) %>
+                  <% } else { %>
+                    <span class="field-hint">Chờ GV công bố</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</main>
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.start-attempt-btn');
+  var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  var csrfToken = csrfMeta ? csrfMeta.content : '';
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (btn.disabled) { return; }
+
+      var ask = typeof window.appConfirm === 'function'
+        ? window.appConfirm('Bắt đầu bài thi ngay bây giờ? Đồng hồ làm bài sẽ được tính từ khi đề được tạo thành công.')
+        : Promise.resolve(window.confirm('Bắt đầu bài thi ngay bây giờ? Đồng hồ làm bài sẽ được tính từ khi đề được tạo thành công.'));
+
+      ask.then(function (ok) {
+        if (!ok) return;
+
+      buttons.forEach(function (b) { b.disabled = true; });
+      btn.textContent = 'Đang chuẩn bị đề thi...';
+
+      var examId = btn.getAttribute('data-exam-id');
+      var classId = btn.getAttribute('data-class-id');
+
+      fetch('/api/exams/' + examId + '/classes/' + classId + '/start', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
+        body: JSON.stringify({}),
+      })
+        .then(function (res) {
+          return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+        })
+        .then(function (result) {
+          if (result.ok && result.body.success) {
+            window.location.href = '/student/attempts/' + result.body.data.attemptId;
+            return;
+          }
+          window.alert((result.body.error && result.body.error.message) || 'Không thể bắt đầu làm bài.');
+          buttons.forEach(function (b) { b.disabled = false; });
+          btn.textContent = 'Bắt đầu làm bài';
+        })
+        .catch(function () {
+          window.alert('Lỗi kết nối. Vui lòng thử lại.');
+          buttons.forEach(function (b) { b.disabled = false; });
+          btn.textContent = 'Bắt đầu làm bài';
+        });
+      });
+    });
+  });
+})();
+</script>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

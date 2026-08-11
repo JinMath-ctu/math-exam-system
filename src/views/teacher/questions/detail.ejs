@@ -1,0 +1,117 @@
+<%
+const typeLabels = {MOT_DAP_AN:'Một đáp án', DUNG_SAI:'Đúng/Sai', TRA_LOI_NGAN:'Trả lời ngắn', TU_LUAN:'Tự luận'};
+const difficultyLabels = {NHAN_BIET:'Nhận biết', THONG_HIEU:'Thông hiểu', VAN_DUNG:'Vận dụng'};
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/teacher/questions">&larr; Ngân hàng câu hỏi</a></p>
+
+    <header class="page-header">
+      <h1>Chi tiết câu hỏi</h1>
+    </header>
+
+    <%- include('../../partials/flash') %>
+
+    <% if (locked) { %>
+      <div class="flash-container">
+        <div class="flash flash-info" role="status">
+          Câu hỏi này đã thuộc đề công bố hoặc đã có lịch sử làm bài nên không thể sửa hoặc xóa. Hãy sao chép thành câu mới nếu cần chỉnh sửa.
+        </div>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Loại câu hỏi</span>
+          <span class="detail-value"><%= typeLabels[question.loai_cau_hoi] %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Chủ đề</span>
+          <span class="detail-value"><%= question.ten_chu_de || '—' %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Lớp</span>
+          <span class="detail-value"><%= question.khoi_lop ? ('Lớp ' + question.khoi_lop) : '—' %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Mức độ</span>
+          <span class="detail-value"><%= difficultyLabels[question.muc_do] %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Điểm mặc định</span>
+          <span class="detail-value"><%= Number(question.diem_mac_dinh).toFixed(2) %></span>
+        </div>
+      </div>
+
+      <div class="question-content katex-content">
+        <%= question.noi_dung %>
+      </div>
+
+      <% if (question.anh_url) { %>
+        <div class="image-preview">
+          <img src="<%= question.anh_url %>" alt="Ảnh minh họa câu hỏi">
+        </div>
+      <% } %>
+
+      <% if (question.loai_cau_hoi === 'MOT_DAP_AN') { %>
+        <h3 class="section-title">Đáp án</h3>
+        <ul class="answer-view-list">
+          <% answers.forEach(function(answer, index) {
+            const choiceLabel = String.fromCharCode(65 + index); // A, B, C, D...
+          %>
+            <li class="katex-content <%= answer.la_dap_an_dung ? 'is-correct' : '' %>">
+              <strong><%= choiceLabel %>.</strong> <%= answer.noi_dung %>
+              <% if (answer.la_dap_an_dung) { %><span class="badge badge-success">Đúng</span><% } %>
+            </li>
+          <% }); %>
+        </ul>
+      <% } else if (question.loai_cau_hoi === 'DUNG_SAI') { %>
+        <h3 class="section-title">Bốn mệnh đề</h3>
+        <p class="field-hint">Thang điểm: 4 đúng = đủ điểm; 1 sai = 0.5×; 2 sai = 0.25×; 3 sai = 0.1×; 4 sai = 0.</p>
+        <ul class="answer-view-list">
+          <% answers.forEach(function(answer, index) {
+            const label = ['a', 'b', 'c', 'd'][index] || (index + 1);
+          %>
+            <li class="katex-content">
+              <strong><%= label %>)</strong> <%= answer.noi_dung %>
+              <span class="badge <%= answer.la_dap_an_dung ? 'badge-success' : 'badge-muted' %>">
+                <%= answer.la_dap_an_dung ? 'Đúng' : 'Sai' %>
+              </span>
+            </li>
+          <% }); %>
+        </ul>
+      <% } else if (question.loai_cau_hoi === 'TRA_LOI_NGAN') { %>
+        <h3 class="section-title">Đáp án chuẩn</h3>
+        <p class="katex-content"><%= question.dap_an_ngan_chuan %></p>
+        <p class="field-hint">Hệ thống so khớp số thập phân / phân số tương đương (và các dạng ghi cách nhau bằng |).</p>
+      <% } %>
+
+      <% if (question.loi_giai) { %>
+        <h3 class="section-title">Lời giải</h3>
+        <p class="katex-content"><%= question.loi_giai %></p>
+      <% } %>
+
+      <div class="card-actions">
+        <% if (!locked) { %>
+          <a href="/teacher/questions/<%= question.id %>/edit" class="btn btn-secondary">Sửa</a>
+        <% } %>
+        <form action="/teacher/questions/<%= question.id %>/copy" method="POST" class="inline-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="btn btn-secondary">Sao chép thành câu mới</button>
+        </form>
+        <% if (!locked) { %>
+          <form action="/teacher/questions/<%= question.id %>/delete" method="POST" class="inline-form" data-confirm="Xóa vĩnh viễn câu hỏi này? Câu sẽ bị gỡ khỏi đề nháp/đã hủy. Không thể hoàn tác.">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-danger">Xóa câu hỏi</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</main>
+<%- include('../../partials/katex-assets') %>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

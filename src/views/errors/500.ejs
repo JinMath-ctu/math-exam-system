@@ -1,0 +1,15 @@
+<%- include('../partials/header') %>
+<main id="main-content" class="page-error">
+  <div class="container error-container">
+    <div class="card error-card">
+      <p class="error-code">500</p>
+      <h1><%= title || 'Lỗi hệ thống' %></h1>
+      <p><%= message || 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.' %></p>
+      <% if (stack) { %>
+        <pre class="error-stack"><%= stack %></pre>
+      <% } %>
+      <a href="/" class="btn btn-primary">Về trang chủ</a>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>

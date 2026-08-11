@@ -1,0 +1,76 @@
+@startuml UCD-02-Giao-vien
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam linetype ortho
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #334155
+}
+
+actor "Giáo viên\n(chủ hệ thống)" as GV
+
+rectangle "Hệ thống JinMath" {
+  package "Tài khoản và lớp học" {
+    usecase "UC-GV-02\nĐăng nhập / Đăng xuất" as UC02
+    usecase "UC-GV-03\nQuản lý lớp" as UC03
+    usecase "UC-GV-04\nQuản lý thành viên" as UC04
+  }
+
+  package "Ngân hàng câu hỏi và đề thi" {
+    usecase "UC-GV-05\nQuản lý chủ đề" as UC05
+    usecase "UC-GV-06\nQuản lý câu hỏi" as UC06
+    usecase "UC-GV-07\nTạo / chỉnh sửa đề" as UC07
+    usecase "Chọn câu và\nthiết lập điểm" as SELECT
+    usecase "Tính lại tổng điểm" as TOTAL
+    usecase "UC-GV-08\nGiao / hủy giao đề" as UC08
+    usecase "UC-GV-09\nCông bố đề" as UC09
+    usecase "Kiểm tra điều kiện\ncông bố đề" as CHECK_PUBLISH
+  }
+
+  package "Bài làm, kết quả và giám sát" {
+    usecase "UC-GV-10\nXem bài làm" as UC10
+    usecase "UC-GV-11\nChấm tự luận" as UC11
+    usecase "UC-GV-12\nCông bố kết quả" as UC12
+    usecase "Kiểm tra tất cả lượt đã chấm\nvà không còn sự cố chờ" as CHECK_RESULT
+    usecase "UC-GV-13\nXem thống kê" as UC13
+    usecase "UC-GV-14\nXử lý sự cố / bù giờ" as UC14
+  }
+}
+
+GV -- UC02
+GV -- UC03
+GV -- UC04
+GV -- UC05
+GV -- UC06
+GV -- UC07
+GV -- UC08
+GV -- UC09
+GV -- UC10
+GV -- UC11
+GV -- UC12
+GV -- UC13
+GV -- UC14
+
+UC07 ..> SELECT : <<include>>
+UC07 ..> TOTAL : <<include>>
+UC09 ..> CHECK_PUBLISH : <<include>>
+UC11 ..> UC10 : <<include>>
+UC12 ..> CHECK_RESULT : <<include>>
+
+note bottom of UC08
+  Tiền điều kiện: đề đã tồn tại;
+  lớp thuộc giáo viên và đang hoạt động.
+end note
+
+note bottom of UC09
+  Tiền điều kiện: đề NHAP, có câu hỏi,
+  đã giao ít nhất một lớp, thời gian hợp lệ.
+end note
+
+note bottom of UC02
+  UC-GV-01: tài khoản giáo viên được tạo
+  bằng seed/cài đặt, không đăng ký công khai.
+end note
+@enduml

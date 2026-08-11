@@ -1,0 +1,35 @@
+sequenceDiagram
+    actor HS as Học sinh
+    participant Browser as Trình duyệt
+    participant Ctrl as attempt-controller
+    participant Svc as attempt-service
+    participant DB as MySQL
+
+    HS->>Browser: Bấm Bắt đầu làm bài
+    Browser->>Ctrl: POST /api/exams/:examId/classes/:classId/start
+    Note over Ctrl: requireStudent + startLimiter
+    Ctrl->>Svc: startAttempt(examId, classId, hocSinhId)
+    Svc->>DB: BEGIN + khóa de_thi / kiểm tra membership
+    alt Không thuộc lớp
+        Svc-->>Ctrl: NOT_CLASS_MEMBER (403)
+    else Đề chưa DA_CONG_BO
+        Svc-->>Ctrl: EXAM_NOT_PUBLISHED (422)
+    else Ngoài khung giờ / đã đóng
+        Svc-->>Ctrl: EXAM_TIME_NOT_OPEN / EXAM_CLOSED
+    else Hết số lần làm
+        Svc-->>Ctrl: ATTEMPT_LIMIT_REACHED (422)
+    else Đã có lượt DANG_LAM
+        Svc-->>Ctrl: 200 { attemptId, isNew:false }
+    else Tạo lượt mới
+        Svc->>Svc: han_nop = MIN(bắt đầu + thời lượng, giờ đóng đề)
+        Svc->>DB: INSERT luot_lam_bai (DANG_LAM)
+        alt tron_cau_hoi = true
+            Svc->>Svc: Fisher–Yates trộn thứ tự
+        end
+        Svc->>DB: INSERT cau_hoi_luot_lam (đóng băng thứ tự + điểm)
+        Svc->>DB: INSERT nhat_ky_thi (BAT_DAU)
+        Svc->>DB: COMMIT
+        Svc-->>Ctrl: 201 { attemptId, isNew:true }
+    end
+    Ctrl-->>Browser: JSON / redirect phòng thi
+    Browser-->>HS: GET /student/attempts/:attemptId

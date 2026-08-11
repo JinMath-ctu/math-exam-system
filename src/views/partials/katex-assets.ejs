@@ -1,0 +1,34 @@
+<%# KaTeX được vendor cục bộ tại public/vendor/katex (copy từ node_modules/katex/dist
+    khi cài đặt — xem package.json devDependencies). Nhờ phục vụ same-origin qua
+    express.static('public'), không cần nới lỏng Content-Security-Policy trong
+    helmet (script-src/style-src 'self' hiện có là đủ), khác với việc dùng CDN
+    jsdelivr sẽ phải thêm domain đó vào CSP. Chỉ include partial này ở các trang
+    có hiển thị/soạn nội dung Toán (câu hỏi, đề thi). %>
+<link rel="stylesheet" href="/vendor/katex/katex.min.css">
+<script src="/vendor/katex/katex.min.js"></script>
+<script src="/vendor/katex/contrib/auto-render.min.js"></script>
+<script>
+  (function () {
+    var KATEX_OPTIONS = {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '\\[', right: '\\]', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false }
+      ],
+      throwOnError: false,
+    };
+
+    function renderMathIn(el) {
+      if (el && window.renderMathInElement) {
+        window.renderMathInElement(el, KATEX_OPTIONS);
+      }
+    }
+
+    window.renderMathIn = renderMathIn;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.katex-content').forEach(renderMathIn);
+    });
+  })();
+</script>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sơ đồ Use Case UML — JinMath</title>
+  <style>
+    :root { color-scheme: light; --bg:#f4f5f7; --card:#fff; --text:#1b1f24; --muted:#5c6773; --line:#d8dee6; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+    header { padding:1.25rem 1.5rem; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2; }
+    header h1 { margin:0 0 .2rem; font-size:1.25rem; }
+    header p { margin:0; color:var(--muted); font-size:.95rem; }
+    .badge { display:inline-block; margin-top:.55rem; padding:.2rem .55rem; border-radius:6px; background:#e6f4ea; color:#137333; font-size:.85rem; font-weight:600; }
+    nav { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
+    nav a { text-decoration:none; color:#0b57d0; background:#e8f0fe; padding:.25rem .55rem; border-radius:999px; font-size:.85rem; }
+    main { max-width:1100px; margin:0 auto; padding:1.25rem 1rem 3rem; display:grid; gap:1.25rem; }
+    section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.1rem 1.1rem; }
+    section h2 { margin:0 0 .35rem; font-size:1.08rem; }
+    section .note { margin:0 0 .85rem; color:var(--muted); font-size:.9rem; }
+    .fig {
+      display:flex; justify-content:center; align-items:center;
+      background:#fafbfc; border:1px solid var(--line); border-radius:8px;
+      padding:1rem; overflow:auto;
+    }
+    .fig img { max-width:100%; height:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.9rem; margin-top:.85rem; }
+    th, td { border:1px solid var(--line); padding:.4rem .55rem; text-align:left; vertical-align:top; }
+    th { background:#f0f3f7; }
+    code { font-size:.88em; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sơ đồ Use Case (UML)</h1>
+    <p>Không phải sơ đồ tuần tự — actor · ellipse use case · biên hệ thống · include/extend.</p>
+    <span class="badge">PlantUML UML Use Case</span>
+    <nav>
+      <a href="#ucd01">UCD-01 Tổng quan</a>
+      <a href="#ucd02">UCD-02 Giáo viên</a>
+      <a href="#ucd03">UCD-03 Học sinh</a>
+      <a href="#ucd04">UCD-04 Làm bài</a>
+    </nav>
+  </header>
+  <main>
+    <section id="ucd01">
+      <h2>UCD-01 — Tổng quan hệ thống</h2>
+      <p class="note">Hai actor ngoài khung · các use case nằm trong biên hệ thống JinMath.</p>
+      <div class="fig"><img src="diagrams/ucd-01-overview.svg" alt="UCD-01 Tổng quan use case"></div>
+    </section>
+
+    <section id="ucd02">
+      <h2>UCD-02 — Góc nhìn Giáo viên</h2>
+      <p class="note">Nét liền: association. Nét đứt có nhãn <code>&lt;&lt;include&gt;&gt;</code>: use case bắt buộc gọi use case khác.</p>
+      <div class="fig"><img src="diagrams/ucd-02-teacher.svg" alt="UCD-02 Use case Giáo viên"></div>
+      <table>
+        <thead><tr><th>Quan hệ</th><th>Ý nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td>UC-GV-07 include UC-GV-06</td><td>Đề lấy câu từ ngân hàng</td></tr>
+          <tr><td>UC-GV-09 include UC-GV-08 include UC-GV-07</td><td>Công bố trên đề đã tạo và đã giao</td></tr>
+          <tr><td>UC-GV-12 include UC-GV-11 include UC-GV-10</td><td>Công bố KQ sau khi xem/chấm bài</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="ucd03">
+      <h2>UCD-03 — Góc nhìn Học sinh</h2>
+      <p class="note"><code>&lt;&lt;include&gt;&gt;</code> bắt buộc · <code>&lt;&lt;extend&gt;&gt;</code> tùy chọn (đánh dấu câu, báo sự cố).</p>
+      <div class="fig"><img src="diagrams/ucd-03-student.svg" alt="UCD-03 Use case Học sinh"></div>
+    </section>
+
+    <section id="ucd04">
+      <h2>UCD-04 — Phòng thi (cốt lõi đề tài)</h2>
+      <p class="note">Actor phụ “Hệ thống (hết giờ)” cũng gắn UC nộp bài. Khôi phục phiên là extend của làm bài.</p>
+      <div class="fig"><img src="diagrams/ucd-04-exam-taking.svg" alt="UCD-04 Use case làm bài"></div>
+    </section>
+  </main>
+</body>
+</html>

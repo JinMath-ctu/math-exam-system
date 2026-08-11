@@ -1,0 +1,78 @@
+<%
+const statusLabels = { CHO_XAC_NHAN: 'Chờ xác nhận', DA_CHAP_NHAN: 'Đã chấp nhận', TU_CHOI: 'Từ chối' };
+const statusBadge = { CHO_XAC_NHAN: 'badge-info', DA_CHAP_NHAN: 'badge-success', TU_CHOI: 'badge-danger' };
+const typeLabels = { MAT_DIEN: 'Mất điện', MAT_MANG: 'Mất mạng', LOI_TRINH_DUYET: 'Lỗi trình duyệt', LOI_HE_THONG: 'Lỗi hệ thống', KHAC: 'Khác' };
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Sự cố bài thi</h1>
+      <p class="page-lead">Xem xét và duyệt bù giờ cho các báo cáo sự cố của học sinh.</p>
+    </header>
+
+    <div class="toolbar">
+      <form action="/teacher/incidents" method="GET" class="filter-form">
+        <div class="form-group">
+          <label for="trangThai">Trạng thái</label>
+          <select id="trangThai" name="trangThai">
+            <option value="">Tất cả</option>
+            <option value="CHO_XAC_NHAN" <%= filters.trangThai === 'CHO_XAC_NHAN' ? 'selected' : '' %>>Chờ xác nhận</option>
+            <option value="DA_CHAP_NHAN" <%= filters.trangThai === 'DA_CHAP_NHAN' ? 'selected' : '' %>>Đã chấp nhận</option>
+            <option value="TU_CHOI" <%= filters.trangThai === 'TU_CHOI' ? 'selected' : '' %>>Từ chối</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Lọc</button>
+      </form>
+    </div>
+
+    <% if (incidents.length === 0) { %>
+      <div class="card empty-state">
+        <p>Chưa có báo cáo sự cố nào phù hợp bộ lọc.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Học sinh</th>
+              <th>Đề thi</th>
+              <th>Loại sự cố</th>
+              <th>Thời điểm báo</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% incidents.forEach(function(inc) { %>
+              <tr>
+                <td><%= inc.hoc_sinh_ho_ten %> <span class="field-hint">(<%= inc.ten_lop %>)</span></td>
+                <td><%= inc.ten_de %> <span class="field-hint">— lần <%= inc.lan_thu %></span></td>
+                <td><%= typeLabels[inc.loai_su_co] || inc.loai_su_co %></td>
+                <td><%= formatDateTimeVN(inc.created_at) %></td>
+                <td><span class="badge <%= statusBadge[inc.trang_thai] %>"><%= statusLabels[inc.trang_thai] %></span></td>
+                <td class="table-actions">
+                  <a href="/teacher/incidents/<%= inc.id %>" class="btn btn-secondary btn-sm">Xem</a>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (pagination.totalPages > 1) { %>
+        <nav class="pagination" aria-label="Điều hướng trang">
+          <% for (let p = 1; p <= pagination.totalPages; p += 1) { %>
+            <% const query = new URLSearchParams(); if (filters.trangThai) query.set('trangThai', filters.trangThai); query.set('page', p); %>
+            <a class="pagination-link <%= p === pagination.page ? 'is-active' : '' %>" href="?<%= query.toString() %>"><%= p %></a>
+          <% } %>
+        </nav>
+      <% } %>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

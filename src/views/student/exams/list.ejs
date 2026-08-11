@@ -1,0 +1,70 @@
+<%
+const timeStatusLabels = { SAP_MO: 'Chưa mở', DANG_MO: 'Đang mở', DA_DONG: 'Đã đóng' };
+const timeStatusBadge = { SAP_MO: 'badge-muted', DANG_MO: 'badge-success', DA_DONG: 'badge-archived' };
+const attemptStatusLabels = {
+  DANG_LAM: 'Đang làm', DA_NOP: 'Đã nộp', TU_DONG_NOP: 'Đã tự động nộp', DA_CHAM: 'Đã chấm',
+};
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-student') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Bài thi được giao</h1>
+      <p class="page-lead">Danh sách đề thi đã được giao cho các lớp bạn đang tham gia.</p>
+    </header>
+
+    <% if (exams.length === 0) { %>
+      <div class="card empty-state">
+        <p>Bạn chưa được giao đề thi nào. Hãy tham gia lớp học để nhận đề thi từ giáo viên.</p>
+        <a href="/student/classes/join" class="btn btn-primary">+ Tham gia lớp học</a>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên đề thi</th>
+              <th>Lớp</th>
+              <th>Thời gian mở đề</th>
+              <th>Trạng thái</th>
+              <th>Lượt làm</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% exams.forEach(function(row) { %>
+              <tr>
+                <td><%= row.ten_de %></td>
+                <td><%= row.ten_lop %></td>
+                <td>
+                  <%= formatDateTimeVN(row.thoi_gian_bat_dau) %> &rarr; <%= formatDateTimeVN(row.thoi_gian_ket_thuc) %>
+                </td>
+                <td>
+                  <% if (row.de_trang_thai === 'DA_HUY') { %>
+                    <span class="badge badge-archived">Đã hủy</span>
+                  <% } else { %>
+                    <span class="badge <%= timeStatusBadge[row.trang_thai_thoi_gian] %>"><%= timeStatusLabels[row.trang_thai_thoi_gian] %></span>
+                  <% } %>
+                  <% if (row.dang_lam_id) { %>
+                    <span class="badge badge-success">Đang làm dở</span>
+                  <% } else if (row.trang_thai_gan_nhat) { %>
+                    <span class="badge badge-muted"><%= attemptStatusLabels[row.trang_thai_gan_nhat] || row.trang_thai_gan_nhat %></span>
+                  <% } %>
+                </td>
+                <td><%= row.so_lan_da_lam %> / <%= row.so_lan_duoc_lam %></td>
+                <td>
+                  <a href="/student/exams/<%= row.de_thi_id %>" class="btn btn-secondary btn-sm">Xem chi tiết</a>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

@@ -1,0 +1,65 @@
+@startuml UCD-04-Lam-bai
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam linetype ortho
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #334155
+}
+
+actor "Học sinh" as HS
+actor "Bộ định thời /\njob máy chủ" as TIMER
+
+rectangle "Phòng thi trực tuyến" {
+  usecase "Xem đề được giao" as VIEW
+  usecase "Bắt đầu / tiếp tục lượt" as START
+  usecase "Kiểm tra thành viên, phân công,\nthời gian và số lần làm" as ELIGIBLE
+  usecase "Tạo lượt làm" as CREATE
+  usecase "Đóng băng câu và\nthứ tự hiển thị" as FREEZE
+  usecase "Làm bài" as TAKE
+  usecase "Autosave lên server" as SAVE
+  usecase "Lưu pending vào localStorage" as LOCAL
+  usecase "Khôi phục / đồng bộ lại" as RESTORE
+  usecase "Heartbeat và đồng bộ\nthời gian server" as HEARTBEAT
+  usecase "Đánh dấu câu" as BOOKMARK
+  usecase "Nộp bài" as SUBMIT
+  usecase "Chấm tự động câu khách quan" as AUTOGRADE
+  usecase "Báo sự cố" as REPORT
+}
+
+HS -- VIEW
+HS -- START
+HS -- TAKE
+HS -- BOOKMARK
+HS -- SUBMIT
+HS -- REPORT
+TIMER -- SUBMIT
+
+START ..> ELIGIBLE : <<include>>
+START ..> CREATE : <<include>>
+FREEZE ..> START : <<extend>>\n[lượt mới]
+TAKE ..> SAVE : <<include>>
+SAVE ..> LOCAL : <<include>>
+TAKE ..> HEARTBEAT : <<include>>
+RESTORE ..> TAKE : <<extend>>\n[refresh / reconnect]
+BOOKMARK ..> TAKE : <<extend>>
+REPORT ..> TAKE : <<extend>>\n[khi có sự cố]
+SUBMIT ..> AUTOGRADE : <<include>>
+
+note bottom of CREATE
+  Nếu đã có lượt DANG_LAM thì trả lại lượt cũ;
+  không tạo trùng khi double-click.
+end note
+
+note bottom of SAVE
+  answerVersion chống ghi đè request cũ;
+  clientRequestId giúp retry idempotent.
+end note
+
+note bottom of SUBMIT
+  Timer client và job 45 giây đều phải
+  được máy chủ kiểm tra lại hạn hiệu lực.
+end note
+@enduml

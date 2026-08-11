@@ -1,0 +1,35 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-student') %>
+<main id="main-content" class="page-list">
+  <div class="container auth-container">
+    <div class="card">
+      <p><a href="/student/classes">&larr; Lớp học của tôi</a></p>
+      <h1>Tham gia lớp học</h1>
+      <p class="auth-subtitle">Nhập mã lớp do giáo viên cung cấp để tham gia.</p>
+
+      <%- include('../../partials/flash') %>
+
+      <form action="/student/classes/join" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="maLop">Mã lớp</label>
+          <input
+            type="text"
+            id="maLop"
+            name="maLop"
+            value="<%= formData.maLop || '' %>"
+            required
+            maxlength="20"
+            placeholder="VD: LOP4F2X9A"
+            autocomplete="off"
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Tham gia lớp</button>
+      </form>
+    </div>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

@@ -1,0 +1,28 @@
+sequenceDiagram
+    actor GV as Giáo viên
+    participant Browser as Trình duyệt
+    participant Upload as upload middleware
+    participant Ctrl as teacher-question-controller
+    participant Svc as question-service
+    participant DB as MySQL
+
+    GV->>Browser: Chọn loại, lớp (khoi_lop), chủ đề, nội dung (+ ảnh)
+    Browser->>Upload: POST /teacher/questions (multipart)
+    Upload->>Ctrl: file + body (sau verifyDeferredCsrf)
+    Ctrl->>Svc: createQuestion({ giaoVienId, body, file })
+    Svc->>Svc: Validate theo loai_cau_hoi
+    Note over Svc: MOT_DAP_AN: đúng 1 đáp án đúng<br/>DUNG_SAI: 4 mệnh đề a–d<br/>TRA_LOI_NGAN: bắt buộc dap_an_ngan_chuan<br/>TU_LUAN: không bắt buộc dap_an
+    alt Chủ đề không thuộc GV / dữ liệu sai
+        Svc->>Svc: Xóa file upload nếu có
+        Svc-->>Ctrl: VALIDATION_ERROR
+        Ctrl-->>Browser: Flash / form lỗi
+    else OK
+        Svc->>DB: BEGIN
+        Svc->>DB: INSERT cau_hoi (chu_de_id, khoi_lop, muc_do, anh_url...)
+        opt MOT_DAP_AN / DUNG_SAI
+            Svc->>DB: INSERT dap_an (nhiều dòng)
+        end
+        Svc->>DB: COMMIT
+        Svc-->>Ctrl: questionId
+        Ctrl-->>Browser: 302 /teacher/questions/:id
+    end

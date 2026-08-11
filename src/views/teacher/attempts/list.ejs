@@ -1,0 +1,134 @@
+<%
+const statusLabels = {
+  DANG_LAM: 'Đang làm',
+  DA_NOP: 'Đã nộp',
+  TU_DONG_NOP: 'Tự động nộp',
+  DA_CHAM: 'Đã chấm',
+};
+const statusBadge = {
+  DANG_LAM: 'badge-muted',
+  DA_NOP: 'badge-info',
+  TU_DONG_NOP: 'badge-info',
+  DA_CHAM: 'badge-success',
+};
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/teacher/exams/<%= exam.id %>">&larr; <%= exam.ten_de %></a></p>
+
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Lượt làm bài</h1>
+      <p class="page-lead"><%= exam.ten_de %> — tổng điểm <%= Number(exam.tong_diem).toFixed(2) %></p>
+    </header>
+
+    <% if (exam.trang_thai === 'DA_CONG_BO' && !exam.da_cong_bo_ket_qua) { %>
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0">Công bố kết quả</h2>
+        <% if (publishResultsStatus && publishResultsStatus.canPublish) { %>
+          <p class="field-hint">Mọi bài đã chấm xong. Bấm công bố để học sinh xem điểm.</p>
+          <form action="/teacher/exams/<%= exam.id %>/publish-results" method="POST" class="inline-form" data-confirm="Công bố kết quả cho học sinh?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-primary">Công bố kết quả</button>
+          </form>
+        <% } else { %>
+          <p class="field-hint"><strong>Chưa công bố được:</strong>
+            <%= (publishResultsStatus && publishResultsStatus.blockers || []).join(' ') || 'Chưa đủ điều kiện.' %>
+          </p>
+          <p class="field-hint">Giáo viên xem điểm từng bài ở cột Điểm bên dưới; học sinh chỉ thấy sau khi công bố.</p>
+        <% } %>
+      </div>
+    <% } else if (exam.da_cong_bo_ket_qua) { %>
+      <div class="card">
+        <p class="field-hint">Kết quả đã công bố. Học sinh có thể xem điểm trong mục Kết quả.</p>
+      </div>
+    <% } %>
+
+    <div class="toolbar">
+      <form action="/teacher/exams/<%= exam.id %>/attempts" method="GET" class="filter-form">
+        <div class="form-group">
+          <label for="trangThai">Trạng thái</label>
+          <select id="trangThai" name="trangThai">
+            <option value="">Tất cả</option>
+            <option value="DANG_LAM" <%= filters.trangThai === 'DANG_LAM' ? 'selected' : '' %>>Đang làm</option>
+            <option value="DA_NOP" <%= filters.trangThai === 'DA_NOP' ? 'selected' : '' %>>Đã nộp</option>
+            <option value="TU_DONG_NOP" <%= filters.trangThai === 'TU_DONG_NOP' ? 'selected' : '' %>>Tự động nộp</option>
+            <option value="DA_CHAM" <%= filters.trangThai === 'DA_CHAM' ? 'selected' : '' %>>Đã chấm</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="lopHocId">Lớp</label>
+          <select id="lopHocId" name="lopHocId">
+            <option value="">Tất cả</option>
+            <% assignedClasses.forEach(function(cls) { %>
+              <option value="<%= cls.lop_hoc_id %>" <%= String(filters.lopHocId) === String(cls.lop_hoc_id) ? 'selected' : '' %>><%= cls.ten_lop %></option>
+            <% }); %>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Lọc</button>
+      </form>
+    </div>
+
+    <% if (attempts.length === 0) { %>
+      <div class="card empty-state">
+        <p>Chưa có lượt làm bài nào phù hợp bộ lọc.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Học sinh</th>
+              <th>Lớp</th>
+              <th>Lần</th>
+              <th>Nộp lúc</th>
+              <th>Điểm</th>
+              <th>Trạng thái</th>
+              <th>Tự luận</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% attempts.forEach(function(att) { %>
+              <tr>
+                <td><%= att.hoc_sinh_ho_ten %><br><span class="field-hint"><%= att.hoc_sinh_email %></span></td>
+                <td><%= att.ten_lop %></td>
+                <td><%= att.lan_thu %></td>
+                <td><%= att.thoi_gian_nop ? formatDateTimeVN(att.thoi_gian_nop) : '—' %></td>
+                <td><%= Number(att.tong_diem).toFixed(2) %></td>
+                <td><span class="badge <%= statusBadge[att.trang_thai] %>"><%= statusLabels[att.trang_thai] %></span></td>
+                <td>
+                  <% if (Number(att.so_cau_tu_luan) > 0) { %>
+                    <%= att.so_cau_da_cham %>/<%= att.so_cau_tu_luan %>
+                  <% } else { %>
+                    —
+                  <% } %>
+                </td>
+                <td class="table-actions">
+                  <a href="/teacher/attempts/<%= att.id %>/grade" class="btn btn-secondary btn-sm">Xem bài</a>
+                  <% if (Number(att.so_cau_tu_luan) > 0 && att.trang_thai !== 'DANG_LAM' && !exam.da_cong_bo_ket_qua) { %>
+                    <a href="/teacher/attempts/<%= att.id %>/grade#cham-tu-luan" class="btn btn-primary btn-sm">Chấm tự luận</a>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (pagination.totalPages > 1) { %>
+        <nav class="pagination" aria-label="Điều hướng trang">
+          <% for (let p = 1; p <= pagination.totalPages; p += 1) { %>
+            <% const query = new URLSearchParams(); if (filters.trangThai) query.set('trangThai', filters.trangThai); if (filters.lopHocId) query.set('lopHocId', filters.lopHocId); query.set('page', p); %>
+            <a class="pagination-link <%= p === pagination.page ? 'is-active' : '' %>" href="?<%= query.toString() %>"><%= p %></a>
+          <% } %>
+        </nav>
+      <% } %>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

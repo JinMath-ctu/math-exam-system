@@ -1,0 +1,148 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/teacher/exams/<%= exam.id %>">&larr; <%= exam.ten_de %></a></p>
+
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Thống kê đề thi</h1>
+      <p class="page-lead"><%= exam.ten_de %> — tổng điểm tối đa <%= Number(exam.tong_diem).toFixed(2) %></p>
+      <p class="field-hint">Các chỉ số điểm và tỉ lệ theo câu chỉ tính trên lượt đã chấm hoàn tất (DA_CHAM).</p>
+    </header>
+
+    <div class="stats-grid">
+      <div class="card stat-card">
+        <span class="detail-label">Số học sinh được giao</span>
+        <span class="stat-value"><%= tongHocSinhDuocGiao %></span>
+      </div>
+      <div class="card stat-card">
+        <span class="detail-label">Học sinh đã nộp</span>
+        <span class="stat-value stat-success"><%= daLam %></span>
+      </div>
+      <div class="card stat-card">
+        <span class="detail-label">Lượt đã chấm (tính điểm)</span>
+        <span class="stat-value stat-success"><%= soLuotDaCham %></span>
+      </div>
+      <div class="card stat-card">
+        <span class="detail-label">Đang làm</span>
+        <span class="stat-value stat-info"><%= dangLam %></span>
+      </div>
+      <div class="card stat-card">
+        <span class="detail-label">Chưa làm</span>
+        <span class="stat-value stat-muted"><%= chuaLam %></span>
+      </div>
+      <div class="card stat-card">
+        <span class="detail-label">Điểm trung bình</span>
+        <span class="stat-value"><%= diemTrungBinh.toFixed(2) %></span>
+      </div>
+      <div class="card stat-card">
+        <span class="detail-label">Điểm cao nhất</span>
+        <span class="stat-value"><%= diemCaoNhat.toFixed(2) %></span>
+      </div>
+      <div class="card stat-card">
+        <span class="detail-label">Điểm thấp nhất</span>
+        <span class="stat-value"><%= diemThapNhat.toFixed(2) %></span>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="card">
+        <h2 class="section-title-sm">Phân bố điểm các lượt đã chấm</h2>
+        <canvas id="scoreDistributionChart" height="260" aria-label="Biểu đồ phân bố điểm" role="img"></canvas>
+      </div>
+      <div class="card">
+        <h2 class="section-title-sm">Tỉ lệ đạt điểm theo câu trên lượt đã chấm (%)</h2>
+        <canvas id="perQuestionChart" height="260" aria-label="Biểu đồ tỉ lệ đúng theo câu" role="img"></canvas>
+      </div>
+    </div>
+
+    <h2 class="section-title">Chi tiết theo câu hỏi</h2>
+    <% if (tiLeDungTheoCau.length === 0) { %>
+      <div class="card empty-state">
+        <p>Đề thi chưa có câu hỏi nào.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Nội dung</th>
+              <th>Loại</th>
+              <th>Lượt đã chấm</th>
+              <th>Tỉ lệ đạt điểm</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% tiLeDungTheoCau.forEach(function(q) { %>
+              <tr>
+                <td><%= q.thuTuGoc %></td>
+                <td class="question-cell">
+                  <div class="question-cell-preview"><%= questionListPreview(q.noiDung) %></div>
+                </td>
+                <td><span class="badge badge-muted"><%= q.loaiCauHoiLabel %></span></td>
+                <td><%= q.soLuotDaCham %></td>
+                <td><%= q.tiLeDung %>%</td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/katex-assets') %>
+<script src="/vendor/chartjs/chart.umd.min.js"></script>
+<script type="application/json" id="exam-stats-data"><%- JSON.stringify({ phanBoDiem, tiLeDungTheoCau }).replace(/</g, '\\u003c') %></script>
+<script>
+  (function () {
+    var statsEl = document.getElementById('exam-stats-data');
+    var stats = statsEl ? JSON.parse(statsEl.textContent || '{}') : {};
+    var phanBoDiem = stats.phanBoDiem || [];
+    var tiLeDungTheoCau = stats.tiLeDungTheoCau || [];
+
+    var scoreCtx = document.getElementById('scoreDistributionChart');
+    if (scoreCtx && window.Chart) {
+      new Chart(scoreCtx, {
+        type: 'bar',
+        data: {
+          labels: phanBoDiem.map(function (b) { return b.khoang; }),
+          datasets: [{
+            label: 'Số lượt đã chấm',
+            data: phanBoDiem.map(function (b) { return b.soLuong; }),
+            backgroundColor: '#0d9488',
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+        },
+      });
+    }
+
+    var questionCtx = document.getElementById('perQuestionChart');
+    if (questionCtx && window.Chart) {
+      new Chart(questionCtx, {
+        type: 'bar',
+        data: {
+          labels: tiLeDungTheoCau.map(function (q) { return 'Câu ' + q.thuTuGoc; }),
+          datasets: [{
+            label: 'Tỉ lệ đạt điểm (%)',
+            data: tiLeDungTheoCau.map(function (q) { return q.tiLeDung; }),
+            backgroundColor: '#0f2b46',
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, max: 100 } },
+        },
+      });
+    }
+  })();
+</script>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

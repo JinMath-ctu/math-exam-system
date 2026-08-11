@@ -1,0 +1,12 @@
+<%- include('../partials/header') %>
+<main id="main-content" class="page-error">
+  <div class="container error-container">
+    <div class="card error-card">
+      <p class="error-code">404</p>
+      <h1><%= title || 'Không tìm thấy trang' %></h1>
+      <p><%= message || 'Trang bạn yêu cầu không tồn tại hoặc đã bị di chuyển.' %></p>
+      <a href="/" class="btn btn-primary">Về trang chủ</a>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>

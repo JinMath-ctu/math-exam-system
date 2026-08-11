@@ -1,0 +1,180 @@
+<%
+const typeLabels = {MOT_DAP_AN:'Một đáp án', DUNG_SAI:'Đúng/Sai', TRA_LOI_NGAN:'Trả lời ngắn', TU_LUAN:'Tự luận'};
+const mucDoLabels = {NHAN_BIET:'Nhận biết', THONG_HIEU:'Thông hiểu', VAN_DUNG:'Vận dụng'};
+const questions = Array.isArray(typeof availableQuestions !== 'undefined' ? availableQuestions : null)
+  ? availableQuestions
+  : [];
+const selectedSet = new Set((typeof selectedQuestionIds !== 'undefined' ? selectedQuestionIds : []).map(Number));
+const diemCauHoi = (formData && formData.diemCauHoi) || {};
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/teacher/exams">&larr; Đề thi</a></p>
+    <h1>Tạo đề thi</h1>
+    <p class="auth-subtitle">Chọn câu hỏi từ ngân hàng ngay khi tạo đề. Đề ở trạng thái Nháp đến khi giao lớp và công bố.</p>
+
+    <%- include('../../partials/flash') %>
+
+    <form action="/teacher/exams/create" method="POST" class="form" id="exam-create-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div class="card">
+        <h2 class="section-title">Thông tin đề</h2>
+
+        <div class="form-group">
+          <label for="tenDe">Tên đề thi</label>
+          <input type="text" id="tenDe" name="tenDe" value="<%= formData.tenDe || '' %>" required maxlength="200" placeholder="Kiểm tra 15 phút - Phương trình bậc hai">
+        </div>
+
+        <div class="form-group">
+          <label for="moTa">Mô tả</label>
+          <textarea id="moTa" name="moTa" rows="2" placeholder="Mô tả ngắn (không bắt buộc)"><%= formData.moTa || '' %></textarea>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="thoiGianBatDau">Giờ mở đề</label>
+            <%- include('../../partials/datetime-vn-field', {
+              id: 'thoiGianBatDau',
+              name: 'thoiGianBatDau',
+              value: formData.thoiGianBatDau || '',
+              required: true,
+              title: 'Ví dụ: 08/08/2026 15:30'
+            }) %>
+            <p class="field-hint">Ngày/tháng/năm giờ:phút — bấm biểu tượng lịch để chọn</p>
+          </div>
+          <div class="form-group">
+            <label for="thoiGianKetThuc">Giờ đóng đề</label>
+            <%- include('../../partials/datetime-vn-field', {
+              id: 'thoiGianKetThuc',
+              name: 'thoiGianKetThuc',
+              value: formData.thoiGianKetThuc || '',
+              required: true,
+              title: 'Ví dụ: 10/08/2026 15:30'
+            }) %>
+            <p class="field-hint">Ngày/tháng/năm giờ:phút — bấm biểu tượng lịch để chọn</p>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="thoiLuongPhut">Thời lượng làm bài (phút)</label>
+            <input type="number" id="thoiLuongPhut" name="thoiLuongPhut" min="1" value="<%= formData.thoiLuongPhut || '' %>" required>
+          </div>
+          <div class="form-group">
+            <label for="soLanDuocLam">Số lần được làm</label>
+            <input type="number" id="soLanDuocLam" name="soLanDuocLam" min="1" value="<%= formData.soLanDuocLam || 1 %>" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <span class="option-stack-label">Tùy chọn đề thi</span>
+          <div class="option-stack">
+            <label class="option-toggle">
+              <input type="checkbox" name="tronCauHoi" <%= formData.tronCauHoi ? 'checked' : '' %>>
+              <span class="option-toggle-body">
+                <span class="option-toggle-title">Trộn thứ tự câu hỏi</span>
+                <span class="option-toggle-desc">Mỗi học sinh nhận thứ tự câu khác nhau khi làm bài.</span>
+              </span>
+            </label>
+            <label class="option-toggle">
+              <input type="checkbox" name="choXemDapAn" <%= formData.choXemDapAn ? 'checked' : '' %>>
+              <span class="option-toggle-body">
+                <span class="option-toggle-title">Cho xem đáp án sau khi công bố kết quả</span>
+                <span class="option-toggle-desc">Học sinh có thể xem đáp án và lời giải khi kết quả đã công bố.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header-row">
+          <h2 class="section-title">Chọn câu hỏi từ ngân hàng</h2>
+          <span class="field-hint" id="picker-count" aria-live="polite">Đã chọn 0</span>
+        </div>
+
+        <% if (questions.length === 0) { %>
+          <p class="field-hint">Chưa có câu hỏi đang hoạt động. <a href="/teacher/questions/create">Tạo câu hỏi mới</a> rồi quay lại, hoặc tạo đề trống rồi thêm sau.</p>
+        <% } else { %>
+          <div class="question-picker-toolbar">
+            <label class="checkbox-label">
+              <input type="checkbox" id="picker-select-all"> Chọn tất cả (<span data-picker-visible-count><%= questions.length %></span>)
+            </label>
+            <div class="form-group picker-filter">
+              <label for="picker-khoi-lop">Lọc lớp</label>
+              <select id="picker-khoi-lop">
+                <option value="">Tất cả</option>
+                <% for (let k = 1; k <= 12; k += 1) { %>
+                  <option value="<%= k %>">Lớp <%= k %></option>
+                <% } %>
+              </select>
+            </div>
+            <a href="/teacher/questions" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Mở ngân hàng</a>
+          </div>
+          <div class="table-wrap question-picker">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:2.5rem"></th>
+                  <th>Loại</th>
+                  <th>Lớp</th>
+                  <th>Nội dung</th>
+                  <th>Mức</th>
+                  <th style="width:6rem">Điểm</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% questions.forEach(function(q) {
+                  const checked = selectedSet.has(Number(q.id));
+                  const diemVal = (() => {
+                    if (formData && formData['diemCauHoi_' + q.id] != null) return formData['diemCauHoi_' + q.id];
+                    if (diemCauHoi['id' + q.id] != null) return diemCauHoi['id' + q.id];
+                    if (diemCauHoi[q.id] != null) return diemCauHoi[q.id];
+                    if (diemCauHoi[String(q.id)] != null) return diemCauHoi[String(q.id)];
+                    return q.diem_mac_dinh;
+                  })();
+                %>
+                  <tr data-khoi-lop="<%= q.khoi_lop || '' %>">
+                    <td>
+                      <input type="checkbox" class="picker-check" name="cauHoiIds" value="<%= q.id %>" <%= checked ? 'checked' : '' %> aria-label="Chọn câu hỏi <%= q.id %>">
+                    </td>
+                    <td><span class="badge badge-muted"><%= typeLabels[q.loai_cau_hoi] || q.loai_cau_hoi %></span></td>
+                    <td><%= q.khoi_lop ? ('Lớp ' + q.khoi_lop) : '—' %></td>
+                    <td>
+                      <span class="question-preview"><%= q.noi_dung.slice(0, 120) %><%= q.noi_dung.length > 120 ? '…' : '' %></span>
+                    </td>
+                    <td><%= mucDoLabels[q.muc_do] || q.muc_do || '—' %></td>
+                    <td>
+                      <input
+                        type="number"
+                        class="score-input picker-score"
+                        name="diemCauHoi_<%= q.id %>"
+                        value="<%= diemVal %>"
+                        step="0.25"
+                        min="0.25"
+                        <%= checked ? '' : 'readonly' %>
+                        aria-label="Điểm câu <%= q.id %>"
+                      >
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <p class="field-hint">Có thể bỏ trống phần chọn câu và thêm sau ở trang chi tiết đề.</p>
+        <% } %>
+      </div>
+
+      <div class="card-actions">
+        <button type="submit" class="btn btn-primary">Tạo đề nháp</button>
+        <a href="/teacher/exams" class="btn btn-secondary">Hủy</a>
+      </div>
+    </form>
+  </div>
+</main>
+<script src="/js/exam-question-picker.js" defer></script>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

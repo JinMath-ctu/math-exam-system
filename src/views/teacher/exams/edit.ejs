@@ -1,0 +1,90 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container auth-container">
+    <div class="card">
+      <p><a href="/teacher/exams/<%= exam.id %>">&larr; Chi tiết đề thi</a></p>
+      <h1>Sửa đề thi</h1>
+      <p class="auth-subtitle">Chỉ có thể sửa khi đề đang ở trạng thái Nháp.</p>
+
+      <%- include('../../partials/flash') %>
+
+      <form action="/teacher/exams/<%= exam.id %>?_method=PUT" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="tenDe">Tên đề thi</label>
+          <input type="text" id="tenDe" name="tenDe" value="<%= formData.tenDe || '' %>" required maxlength="200">
+        </div>
+
+        <div class="form-group">
+          <label for="moTa">Mô tả</label>
+          <textarea id="moTa" name="moTa" rows="2"><%= formData.moTa || '' %></textarea>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="thoiGianBatDau">Giờ mở đề</label>
+            <%- include('../../partials/datetime-vn-field', {
+              id: 'thoiGianBatDau',
+              name: 'thoiGianBatDau',
+              value: formData.thoiGianBatDau || '',
+              required: true,
+              title: 'Ví dụ: 08/08/2026 15:30'
+            }) %>
+            <p class="field-hint">Ngày/tháng/năm giờ:phút — bấm biểu tượng lịch để chọn</p>
+          </div>
+          <div class="form-group">
+            <label for="thoiGianKetThuc">Giờ đóng đề</label>
+            <%- include('../../partials/datetime-vn-field', {
+              id: 'thoiGianKetThuc',
+              name: 'thoiGianKetThuc',
+              value: formData.thoiGianKetThuc || '',
+              required: true,
+              title: 'Ví dụ: 10/08/2026 15:30'
+            }) %>
+            <p class="field-hint">Ngày/tháng/năm giờ:phút — bấm biểu tượng lịch để chọn</p>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="thoiLuongPhut">Thời lượng làm bài (phút)</label>
+            <input type="number" id="thoiLuongPhut" name="thoiLuongPhut" min="1" value="<%= formData.thoiLuongPhut || '' %>" required>
+          </div>
+          <div class="form-group">
+            <label for="soLanDuocLam">Số lần được làm</label>
+            <input type="number" id="soLanDuocLam" name="soLanDuocLam" min="1" value="<%= formData.soLanDuocLam || 1 %>" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <span class="option-stack-label">Tùy chọn đề thi</span>
+          <div class="option-stack">
+            <label class="option-toggle">
+              <input type="checkbox" name="tronCauHoi" <%= formData.tronCauHoi ? 'checked' : '' %>>
+              <span class="option-toggle-body">
+                <span class="option-toggle-title">Trộn thứ tự câu hỏi</span>
+                <span class="option-toggle-desc">Mỗi học sinh nhận thứ tự câu khác nhau khi làm bài.</span>
+              </span>
+            </label>
+            <label class="option-toggle">
+              <input type="checkbox" name="choXemDapAn" <%= formData.choXemDapAn ? 'checked' : '' %>>
+              <span class="option-toggle-body">
+                <span class="option-toggle-title">Cho xem đáp án sau khi công bố kết quả</span>
+                <span class="option-toggle-desc">Học sinh có thể xem đáp án và lời giải khi kết quả đã công bố.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+          <a href="/teacher/exams/<%= exam.id %>" class="btn btn-secondary">Hủy</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

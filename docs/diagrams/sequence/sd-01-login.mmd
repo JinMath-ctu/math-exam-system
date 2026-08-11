@@ -1,0 +1,38 @@
+sequenceDiagram
+    actor User as Người dùng
+    participant Browser as Trình duyệt
+    participant Ctrl as auth-controller
+    participant Svc as auth-service
+    participant Sess as session-auth
+    participant DB as MySQL
+
+    User->>Browser: Nhập email + mật khẩu
+    Browser->>Ctrl: POST /auth/login (CSRF + authLimiter)
+    Ctrl->>Svc: login({ email, password })
+    Note over Svc: email = trim().toLowerCase()
+    Svc->>DB: SELECT nguoi_dung WHERE email = ?
+    DB-->>Svc: user / null
+    alt Không có user
+        Svc-->>Ctrl: UNAUTHORIZED (401)
+        Ctrl-->>Browser: Flash lỗi, ở /auth/login
+    else trang_thai != HOAT_DONG
+        Svc-->>Ctrl: FORBIDDEN (403)
+        Ctrl-->>Browser: Flash tài khoản khóa
+    else Tài khoản đang hoạt động
+        Svc->>Svc: bcrypt.compare(password, mat_khau_hash)
+        alt Mật khẩu không khớp
+            Svc-->>Ctrl: UNAUTHORIZED (401)
+            Ctrl-->>Browser: Flash lỗi, không tiết lộ email tồn tại
+        else Mật khẩu khớp
+            Svc-->>Ctrl: { sessionUser, redirectTo }
+            Ctrl->>Sess: regenerateWithUser(req, sessionUser)
+            Sess->>DB: Lưu session (express-mysql-session)
+            alt Có returnTo nội bộ hợp lệ
+                Ctrl-->>Browser: 302 returnTo
+            else vaiTro = GIAO_VIEN
+                Ctrl-->>Browser: 302 /teacher/dashboard
+            else vaiTro = HOC_SINH
+                Ctrl-->>Browser: 302 /student/dashboard
+            end
+        end
+    end

@@ -1,0 +1,11 @@
+﻿node_modules/
+.env
+dist/
+report/bao-cao.html
+uploads/*
+!uploads/.gitkeep
+uploads/questions/*
+!uploads/questions/.gitkeep
+npm-debug.log*
+.DS_Store
+.vscode/

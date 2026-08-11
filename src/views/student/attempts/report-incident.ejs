@@ -1,0 +1,108 @@
+<%
+const typeLabels = { MAT_DIEN: 'Mất điện', MAT_MANG: 'Mất mạng', LOI_TRINH_DUYET: 'Lỗi trình duyệt', LOI_HE_THONG: 'Lỗi hệ thống', KHAC: 'Khác' };
+const statusLabels = { CHO_XAC_NHAN: 'Chờ xử lý', DA_CHAP_NHAN: 'Đã chấp nhận', TU_CHOI: 'Đã từ chối' };
+const statusBadges = { CHO_XAC_NHAN: 'badge-info', DA_CHAP_NHAN: 'badge-success', TU_CHOI: 'badge-archived' };
+const hasPendingIncident = incidents.some(function(incident) { return incident.trang_thai === 'CHO_XAC_NHAN'; });
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-student') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/student/attempts/<%= attempt.id %>">&larr; Quay lại bài làm</a></p>
+
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Báo cáo sự cố bài thi</h1>
+      <p class="page-lead"><%= attempt.ten_de %> — lần làm <%= attempt.lan_thu %></p>
+    </header>
+
+    <div class="card">
+      <p class="field-hint">
+        Hãy mô tả sự cố bạn gặp phải trong lúc làm bài (mất mạng, mất điện, lỗi trình duyệt...).
+        Giáo viên sẽ xem xét và quyết định số giây bù giờ phù hợp — bạn không tự nhập số giây bù giờ.
+      </p>
+
+      <% if (hasPendingIncident) { %>
+        <div class="flash flash-info" role="status">Bạn đang có một báo cáo chờ giáo viên xử lý. Có thể gửi báo cáo mới sau khi báo cáo này được duyệt hoặc từ chối.</div>
+      <% } %>
+
+      <form action="/student/attempts/<%= attempt.id %>/incidents" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="loaiSuCo">Loại sự cố</label>
+          <select id="loaiSuCo" name="loaiSuCo" required>
+            <% loaiSuCoValues.forEach(function(v) { %>
+              <option value="<%= v %>"><%= typeLabels[v] || v %></option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="batDauLuc">Bắt đầu sự cố (tùy chọn)</label>
+            <%- include('../../partials/datetime-vn-field', {
+              id: 'batDauLuc',
+              name: 'batDauLuc',
+              value: '',
+              required: false,
+              title: 'Ví dụ: 08/08/2026 15:30'
+            }) %>
+          </div>
+          <div class="form-group">
+            <label for="ketThucLuc">Kết thúc sự cố (tùy chọn)</label>
+            <%- include('../../partials/datetime-vn-field', {
+              id: 'ketThucLuc',
+              name: 'ketThucLuc',
+              value: '',
+              required: false,
+              title: 'Ví dụ: 08/08/2026 15:45'
+            }) %>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="moTa">Mô tả chi tiết</label>
+          <textarea id="moTa" name="moTa" rows="4" maxlength="2000" placeholder="Ví dụ: Mất mạng khoảng 2 phút khi đang làm câu 3."></textarea>
+        </div>
+
+        <div class="card-actions">
+          <button type="submit" class="btn btn-primary" <%= hasPendingIncident ? 'disabled' : '' %>>Gửi báo cáo sự cố</button>
+        </div>
+      </form>
+    </div>
+
+    <h2 class="section-title">Lịch sử báo cáo</h2>
+    <% if (!incidents.length) { %>
+      <div class="card empty-state"><p>Bạn chưa gửi báo cáo sự cố nào cho lượt làm này.</p></div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Thời gian gửi</th>
+              <th>Loại sự cố</th>
+              <th>Trạng thái</th>
+              <th>Thời gian bù</th>
+              <th>Phản hồi giáo viên</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% incidents.forEach(function(incident) { %>
+              <tr>
+                <td><%= formatDateTimeVN(incident.created_at) %></td>
+                <td><%= typeLabels[incident.loai_su_co] || incident.loai_su_co %></td>
+                <td><span class="badge <%= statusBadges[incident.trang_thai] || 'badge-muted' %>"><%= statusLabels[incident.trang_thai] || incident.trang_thai %></span></td>
+                <td><%= incident.so_giay_bu_gio ? `${incident.so_giay_bu_gio} giây` : '—' %></td>
+                <td><%= incident.ly_do_xu_ly || '—' %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

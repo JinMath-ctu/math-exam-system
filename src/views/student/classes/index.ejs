@@ -1,0 +1,52 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-student') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <div class="toolbar">
+      <header class="page-header page-header-compact">
+        <h1>Lớp học của tôi</h1>
+        <p class="page-lead">Danh sách các lớp học bạn đang tham gia.</p>
+      </header>
+      <a href="/student/classes/join" class="btn btn-primary">+ Tham gia lớp học</a>
+    </div>
+
+    <% if (classes.length === 0) { %>
+      <div class="card empty-state">
+        <p>Bạn chưa tham gia lớp học nào. Hãy nhập mã lớp do giáo viên cung cấp để tham gia.</p>
+        <a href="/student/classes/join" class="btn btn-primary">+ Tham gia lớp học</a>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên lớp</th>
+              <th>Mã lớp</th>
+              <th>Ngày tham gia</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% classes.forEach(function(cls) { %>
+              <tr>
+                <td><%= cls.ten_lop %></td>
+                <td><span class="class-code"><%= cls.ma_lop %></span></td>
+                <td><%= new Date(cls.ngay_tham_gia).toLocaleDateString('vi-VN') %></td>
+                <td class="table-actions">
+                  <form action="/student/classes/<%= cls.id %>/leave" method="POST" class="inline-form" data-confirm="Bạn chắc chắn muốn rời lớp này?">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-danger btn-sm">Rời lớp</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

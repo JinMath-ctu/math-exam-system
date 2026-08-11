@@ -1,0 +1,132 @@
+<%
+const questionTypeLabels = {
+  MOT_DAP_AN: 'Một đáp án',
+  DUNG_SAI: 'Đúng/Sai',
+  TRA_LOI_NGAN: 'Trả lời ngắn',
+  TU_LUAN: 'Tự luận',
+};
+const difficultyLabels = {
+  NHAN_BIET: 'Nhận biết',
+  THONG_HIEU: 'Thông hiểu',
+  VAN_DUNG: 'Vận dụng',
+};
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Ngân hàng câu hỏi</h1>
+      <p class="page-lead">Soạn câu hỏi trắc nghiệm, đúng/sai, trả lời ngắn và tự luận.</p>
+    </header>
+
+    <div class="toolbar">
+      <form action="/teacher/questions" method="GET" class="filter-form">
+        <div class="form-group">
+          <label for="q">Tìm kiếm</label>
+          <input type="text" id="q" name="q" value="<%= filters.q || '' %>" placeholder="Nội dung câu hỏi">
+        </div>
+        <div class="form-group">
+          <label for="chuDeId">Chủ đề</label>
+          <select id="chuDeId" name="chuDeId">
+            <option value="">Tất cả</option>
+            <% topics.forEach(function(topic) { %>
+              <option value="<%= topic.id %>" <%= String(filters.chuDeId) === String(topic.id) ? 'selected' : '' %>><%= topic.ten_chu_de %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="khoiLop">Lớp</label>
+          <select id="khoiLop" name="khoiLop">
+            <option value="">Tất cả</option>
+            <% for (let k = 1; k <= 12; k += 1) { %>
+              <option value="<%= k %>" <%= String(filters.khoiLop) === String(k) ? 'selected' : '' %>>Lớp <%= k %></option>
+            <% } %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="loaiCauHoi">Loại</label>
+          <select id="loaiCauHoi" name="loaiCauHoi">
+            <option value="">Tất cả</option>
+            <% questionTypes.forEach(function(type) { %>
+              <option value="<%= type %>" <%= filters.loaiCauHoi === type ? 'selected' : '' %>><%= questionTypeLabels[type] %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="mucDo">Mức độ</label>
+          <select id="mucDo" name="mucDo">
+            <option value="">Tất cả</option>
+            <% difficultyLevels.forEach(function(level) { %>
+              <option value="<%= level %>" <%= filters.mucDo === level ? 'selected' : '' %>><%= difficultyLabels[level] %></option>
+            <% }); %>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Lọc</button>
+      </form>
+      <a href="/teacher/questions/create" class="btn btn-primary">+ Tạo câu hỏi</a>
+    </div>
+
+    <% if (questions.length === 0) { %>
+      <div class="card empty-state">
+        <p>Chưa có câu hỏi nào phù hợp. Hãy tạo câu hỏi đầu tiên của bạn.</p>
+        <a href="/teacher/questions/create" class="btn btn-primary">+ Tạo câu hỏi</a>
+      </div>
+    <% } else { %>
+      <div class="table-wrap table-questions">
+        <table>
+          <thead>
+            <tr>
+              <th>Nội dung</th>
+              <th>Loại</th>
+              <th>Lớp</th>
+              <th>Chủ đề</th>
+              <th>Mức độ</th>
+              <th>Điểm</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% questions.forEach(function(question) { %>
+              <tr>
+                <td class="question-cell">
+                  <div class="question-cell-preview"><%= questionListPreview(question.noi_dung) %></div>
+                </td>
+                <td><span class="badge badge-muted"><%= questionTypeLabels[question.loai_cau_hoi] %></span></td>
+                <td><%= question.khoi_lop ? ('Lớp ' + question.khoi_lop) : '—' %></td>
+                <td><%= question.ten_chu_de || '—' %></td>
+                <td><%= difficultyLabels[question.muc_do] %></td>
+                <td><%= Number(question.diem_mac_dinh).toFixed(2) %></td>
+                <td class="table-actions">
+                  <a href="/teacher/questions/<%= question.id %>" class="btn btn-secondary btn-sm">Xem</a>
+                  <a href="/teacher/questions/<%= question.id %>/edit" class="btn btn-secondary btn-sm">Sửa</a>
+                  <form action="/teacher/questions/<%= question.id %>/copy" method="POST" class="inline-form">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-secondary btn-sm">Sao chép</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (pagination.totalPages > 1) { %>
+        <% const pageParams = { q: filters.q, chuDeId: filters.chuDeId, khoiLop: filters.khoiLop, loaiCauHoi: filters.loaiCauHoi, mucDo: filters.mucDo }; %>
+        <nav class="pagination" aria-label="Điều hướng trang">
+          <% for (let p = 1; p <= pagination.totalPages; p += 1) { %>
+            <% const query = new URLSearchParams(); Object.keys(pageParams).forEach(function(key) { if (pageParams[key]) query.set(key, pageParams[key]); }); query.set('page', p); %>
+            <a
+              class="pagination-link <%= p === pagination.page ? 'is-active' : '' %>"
+              href="?<%= query.toString() %>"
+            ><%= p %></a>
+          <% } %>
+        </nav>
+      <% } %>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

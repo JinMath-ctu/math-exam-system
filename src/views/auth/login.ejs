@@ -1,0 +1,78 @@
+<%- include('../partials/header', { bodyClass: 'is-auth' }) %>
+<main id="main-content" class="page-auth">
+  <div class="auth-decor" aria-hidden="true">
+    <span class="d1">π</span>
+    <span class="d2">∑</span>
+    <span class="d3">√</span>
+    <span class="d4">Δ</span>
+  </div>
+
+  <div class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-card-logo">
+        <a href="/" aria-label="JinMath - Trang chủ">
+          <img src="/images/jinmath-logo.png" alt="JinMath" width="180" height="52">
+        </a>
+      </div>
+
+      <h1>Chào mừng trở lại</h1>
+      <p class="auth-subtitle">Nhập thông tin của bạn để tiếp tục.</p>
+
+      <%- include('../partials/flash') %>
+
+      <form action="/auth/login" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value="<%= (formData && formData.email) ? formData.email : '' %>"
+            required
+            autocomplete="email"
+            placeholder="ten@example.com"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">Mật khẩu</label>
+          <div class="password-field">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              autocomplete="current-password"
+              placeholder="Nhập mật khẩu"
+            >
+            <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Hiện mật khẩu" aria-pressed="false">
+              <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-5.94"></path>
+                <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <p class="auth-forgot">
+          <a href="/auth/forgot-password">Quên mật khẩu?</a>
+        </p>
+
+        <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+      </form>
+
+      <p class="auth-footer">
+        Bạn chưa có tài khoản? <a href="/auth/register">Đăng ký ngay</a>
+      </p>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>

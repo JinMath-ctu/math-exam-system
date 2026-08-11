@@ -1,0 +1,35 @@
+sequenceDiagram
+    actor HS as Học sinh
+    participant JS as exam-room.js
+    participant LS as localStorage
+    participant Ctrl as attempt-controller
+    participant Svc as attempt-service
+    participant DB as MySQL
+
+    HS->>JS: Chọn / nhập đáp án
+    JS->>JS: answerVersion++
+    JS->>LS: math_exam_user_{uid}_attempt_{attemptId} (synced=false)
+    JS->>JS: Debounce + queue theo câu
+    JS->>Ctrl: PUT /api/attempts/:attemptId/answers/:questionId
+    Note over JS,Ctrl: Body: answerVersion, clientRequestId,<br/>selectedAnswerId / answerText / statementSelections
+    Ctrl->>Svc: saveAnswer(...)
+    Svc->>DB: BEGIN + FOR UPDATE luot_lam_bai
+    alt Không còn DANG_LAM
+        Svc-->>Ctrl: ATTEMPT_NOT_IN_PROGRESS (422)
+    else Quá han_nop_hieu_luc
+        Svc-->>Ctrl: DEADLINE_PASSED (422)
+    else answerVersion request nhỏ hơn hoặc bằng DB
+        Svc-->>Ctrl: OLD_ANSWER_VERSION (409)
+        Ctrl-->>JS: Không ghi đè
+    else Cùng clientRequestId + version (idempotent)
+        Svc-->>Ctrl: 200 OK (không ghi log mới)
+        Ctrl-->>JS: OK
+        JS->>LS: synced=true
+    else Hợp lệ
+        Svc->>DB: UPSERT chi_tiet_bai_lam
+        Svc->>DB: INSERT nhat_ky_thi (LUU_DAP_AN)
+        Svc->>DB: COMMIT
+        Svc-->>Ctrl: saved + answerVersion
+        Ctrl-->>JS: 200 OK
+        JS->>LS: synced=true
+    end

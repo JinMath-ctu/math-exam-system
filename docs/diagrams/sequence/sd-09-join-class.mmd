@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor HS as Học sinh
+    participant Browser as Trình duyệt
+    participant Ctrl as student-class-controller
+    participant Svc as class-service
+    participant DB as MySQL
+
+    HS->>Browser: Nhập mã lớp
+    Browser->>Ctrl: POST /student/classes/join (joinClassRules)
+    Ctrl->>Svc: joinClass(hocSinhId, maLop)
+    Svc->>DB: SELECT lop_hoc FOR UPDATE WHERE ma_lop = ?
+    alt Không có lớp
+        Svc-->>Ctrl: NOT_FOUND — Mã lớp không tồn tại
+        Ctrl-->>Browser: Flash lỗi
+    else trang_thai = LUU_TRU
+        Svc-->>Ctrl: CONFLICT — Lớp đã lưu trữ
+        Ctrl-->>Browser: Flash lỗi
+    else Đang là thành viên DANG_HOC
+        Svc-->>Ctrl: CONFLICT — Đã là thành viên
+        Ctrl-->>Browser: Flash lỗi
+    else Từng DA_ROI_LOP
+        Svc->>DB: UPDATE thanh_vien_lop SET trang_thai=DANG_HOC
+        Ctrl-->>Browser: 302 /student/classes
+    else Thành viên mới
+        Svc->>DB: INSERT thanh_vien_lop (DANG_HOC)
+        Ctrl-->>Browser: 302 /student/classes
+    end

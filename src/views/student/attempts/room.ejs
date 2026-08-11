@@ -1,0 +1,49 @@
+<%- include('../../partials/header', { bodyClass: 'is-exam-room' }) %>
+<main
+  id="exam-room-page"
+  class="page-exam-room"
+  data-attempt-id="<%= attempt.id %>"
+  data-exam-id="<%= exam.id %>"
+  data-user-id="<%= user.id %>"
+>
+  <div class="exam-room-topbar">
+    <div class="exam-room-title">
+      <h1><%= exam.ten_de %></h1>
+      <span class="exam-room-meta">Tổng điểm: <%= Number(exam.tong_diem).toFixed(2) %> · Lần làm: <%= attempt.lan_thu %></span>
+    </div>
+    <div class="exam-room-status">
+      <span id="sync-status" class="sync-status sync-status-saved">Đã lưu</span>
+      <span id="timer" class="exam-timer" aria-live="polite">--:--:--</span>
+    </div>
+  </div>
+
+  <div id="readonly-banner" class="exam-readonly-banner" hidden>
+    Bài làm này đã được nộp, bạn chỉ có thể xem lại — không thể chỉnh sửa đáp án.
+  </div>
+
+  <div class="exam-room-body">
+    <div class="exam-nav-rail">
+      <aside class="question-nav" id="question-nav" aria-label="Danh sách câu hỏi"></aside>
+      <div class="exam-nav-legend" aria-hidden="true">
+        <div class="exam-nav-legend-item"><span class="legend-swatch"></span> Chưa làm</div>
+        <div class="exam-nav-legend-item"><span class="legend-swatch is-answered"></span> Đã làm</div>
+        <div class="exam-nav-legend-item"><span class="legend-swatch is-current"></span> Đang chọn</div>
+        <div class="exam-nav-legend-item"><span class="legend-swatch is-bookmarked"></span> Đánh dấu</div>
+      </div>
+    </div>
+
+    <section class="question-panel" id="question-panel">
+      <p>Đang tải đề thi...</p>
+    </section>
+  </div>
+
+  <div class="exam-room-footer">
+    <a href="/student/exams/<%= exam.id %>" class="btn btn-secondary">Thoát</a>
+    <a href="/student/attempts/<%= attempt.id %>/incidents/new" class="btn btn-secondary">Báo sự cố</a>
+    <button type="button" id="submit-btn" class="btn btn-primary btn-lg">Nộp bài</button>
+  </div>
+</main>
+<%- include('../../partials/katex-assets') %>
+<script src="/js/exam-save-policy.js" defer></script>
+<script src="/js/exam-room.js" defer></script>
+<%- include('../../partials/footer') %>

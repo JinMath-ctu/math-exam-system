@@ -1,0 +1,57 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-student') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Kết quả của tôi</h1>
+      <p class="page-lead">Chỉ hiển thị các bài thi đã được giáo viên công bố kết quả.</p>
+    </header>
+
+    <% if (results.length === 0) { %>
+      <div class="card empty-state">
+        <p>Chưa có kết quả nào được công bố.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Đề thi</th>
+              <th>Lần làm</th>
+              <th>Nộp lúc</th>
+              <th>Điểm</th>
+              <th>Công bố lúc</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% results.forEach(function(r) { %>
+              <tr>
+                <td><%= r.ten_de %></td>
+                <td><%= r.lan_thu %></td>
+                <td><%= r.thoi_gian_nop ? formatDateTimeVN(r.thoi_gian_nop) : '—' %></td>
+                <td><%= Number(r.tong_diem).toFixed(2) %> / <%= Number(r.de_tong_diem).toFixed(2) %></td>
+                <td><%= formatDateTimeVN(r.thoi_gian_cong_bo_ket_qua) %></td>
+                <td class="table-actions">
+                  <a href="/student/results/<%= r.id %>" class="btn btn-secondary btn-sm">Xem chi tiết</a>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (pagination.totalPages > 1) { %>
+        <nav class="pagination" aria-label="Điều hướng trang">
+          <% for (let p = 1; p <= pagination.totalPages; p += 1) { %>
+            <a class="pagination-link <%= p === pagination.page ? 'is-active' : '' %>" href="?page=<%= p %>"><%= p %></a>
+          <% } %>
+        </nav>
+      <% } %>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

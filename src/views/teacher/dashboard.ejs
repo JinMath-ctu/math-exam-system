@@ -1,0 +1,49 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar-teacher') %>
+<main id="main-content" class="page-dashboard">
+  <div class="container">
+    <%- include('../partials/flash') %>
+
+    <header class="page-header">
+      <div>
+        <h1>Xin chào, <%= user.hoTen %></h1>
+        <p class="page-lead">Quản lý lớp, ngân hàng câu hỏi và đề thi trong một không gian học thuật gọn.</p>
+      </div>
+      <div class="page-header-actions">
+        <a href="/teacher/exams/create" class="btn btn-primary">Tạo đề thi</a>
+        <a href="/teacher/questions/create" class="btn btn-secondary">Thêm câu hỏi</a>
+      </div>
+    </header>
+
+    <section class="dashboard-grid" aria-label="Lối tắt chức năng">
+      <article class="card dashboard-card is-featured">
+        <h2>Đề thi &amp; phòng làm bài</h2>
+        <p>Tạo đề nháp, giao lớp, công bố đề, theo dõi lượt làm và công bố kết quả khi đã chấm xong.</p>
+        <div class="card-actions">
+          <a href="/teacher/exams" class="btn btn-primary btn-sm">Quản lý đề thi</a>
+          <a href="/teacher/exams/create" class="btn btn-secondary btn-sm">Tạo đề mới</a>
+        </div>
+      </article>
+
+      <article class="card dashboard-card">
+        <h2>Lớp học</h2>
+        <p>Tạo lớp, chia sẻ mã lớp và quản lý thành viên.</p>
+        <a href="/teacher/classes" class="btn btn-secondary btn-sm">Quản lý lớp học</a>
+      </article>
+
+      <article class="card dashboard-card">
+        <h2>Ngân hàng câu hỏi</h2>
+        <p>Soạn bốn loại câu hỏi Toán, kèm công thức KaTeX và ảnh minh họa.</p>
+        <a href="/teacher/questions" class="btn btn-secondary btn-sm">Quản lý câu hỏi</a>
+      </article>
+
+      <article class="card dashboard-card">
+        <h2>Sự cố &amp; bù giờ</h2>
+        <p>Xem báo cáo sự cố, duyệt hoặc từ chối bù giờ có kiểm soát.</p>
+        <a href="/teacher/incidents" class="btn btn-secondary btn-sm">Xử lý sự cố</a>
+      </article>
+    </section>
+  </div>
+</main>
+<%- include('../partials/app-end') %>
+<%- include('../partials/footer') %>

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bộ 15 sơ đồ — JinMath</title>
+  <style>
+    :root { color-scheme:light; --bg:#eef2f7; --card:#fff; --text:#172033; --muted:#526071; --line:#d8e0ea; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:22px 28px; background:#173b6c; color:#fff; }
+    header h1 { margin:0 0 6px; font-size:26px; }
+    header p { margin:0; opacity:.9; }
+    nav { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    nav a { color:#173b6c; background:#fff; text-decoration:none; padding:5px 10px; border-radius:999px; font-size:13px; }
+    main { max-width:1500px; margin:auto; padding:22px; display:grid; gap:22px; }
+    .group-title { margin:8px 0 -8px; padding-bottom:8px; border-bottom:2px solid #9fb4ce; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; overflow:auto; box-shadow:0 2px 7px rgba(15,23,42,.05); }
+    .card h2 { margin:0 0 15px; font-size:18px; }
+    .card img { display:block; max-width:100%; height:auto; margin:auto; }
+    .mermaid { display:flex; justify-content:center; min-width:max-content; margin:0; background:#fff; }
+    .mermaid svg { background:#fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bộ 15 sơ đồ phân tích hệ thống JinMath</h1>
+    <p>4 Use Case · 10 sơ đồ tuần tự · 1 sơ đồ phân rã chức năng</p>
+    <nav><a href="#usecase">Use Case</a><a href="#sequence">Tuần tự</a><a href="#decomposition">Phân rã</a></nav>
+  </header>
+  <main>
+    <h2 class="group-title" id="usecase">I. Bốn sơ đồ Use Case</h2>
+    
+    <section class="card use-case-card">
+      <h2>UCD-01 — Tổng quan hệ thống</h2>
+      <img src="diagrams/ucd-01-overview.svg" alt="UCD-01 — Tổng quan hệ thống">
+    </section>
+
+    <section class="card use-case-card">
+      <h2>UCD-02 — Góc nhìn Giáo viên</h2>
+      <img src="diagrams/ucd-02-teacher.svg" alt="UCD-02 — Góc nhìn Giáo viên">
+    </section>
+
+    <section class="card use-case-card">
+      <h2>UCD-03 — Góc nhìn Học sinh</h2>
+      <img src="diagrams/ucd-03-student.svg" alt="UCD-03 — Góc nhìn Học sinh">
+    </section>
+
+    <section class="card use-case-card">
+      <h2>UCD-04 — Phòng thi trực tuyến</h2>
+      <img src="diagrams/ucd-04-exam-taking.svg" alt="UCD-04 — Phòng thi trực tuyến">
+    </section>
+    <h2 class="group-title" id="sequence">II. Mười sơ đồ tuần tự</h2>
+    
+    <section class="card render-card" id="sd01" data-export="sd-01-login" data-kind="sequence">
+      <h2>SD-01 — Đăng nhập (session)</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor User as Người dùng
+    participant Browser as Trình duyệt
+    participant Ctrl as auth-controller
+    participant Svc as auth-service
+    participant Sess as session-auth
+    participant DB as MySQL
+
+    User-&gt;&gt;Browser: Nhập email + mật khẩu
+    Browser-&gt;&gt;Ctrl: POST /auth/login (CSRF + authLimiter)
+    Ctrl-&gt;&gt;Svc: login({ email, password })
+    Note over Svc: email = trim().toLowerCase()
+    Svc-&gt;&gt;DB: SELECT nguoi_dung WHERE email = ?
+    DB--&gt;&gt;Svc: user / null
+    alt Không có user
+        Svc--&gt;&gt;Ctrl: UNAUTHORIZED (401)
+        Ctrl--&gt;&gt;Browser: Flash lỗi, ở /auth/login
+    else trang_thai != HOAT_DONG
+        Svc--&gt;&gt;Ctrl: FORBIDDEN (403)
+        Ctrl--&gt;&gt;Browser: Flash tài khoản khóa
+    else Tài khoản đang hoạt động
+        Svc-&gt;&gt;Svc: bcrypt.compare(password, mat_khau_hash)
+        alt Mật khẩu không khớp
+            Svc--&gt;&gt;Ctrl: UNAUTHORIZED (401)
+            Ctrl--&gt;&gt;Browser: Flash lỗi, không tiết lộ email tồn tại
+        else Mật khẩu khớp
+            Svc--&gt;&gt;Ctrl: { sessionUser, redirectTo }
+            Ctrl-&gt;&gt;Sess: regenerateWithUser(req, sessionUser)
+            Sess-&gt;&gt;DB: Lưu session (express-mysql-session)
+            alt Có returnTo nội bộ hợp lệ
+                Ctrl--&gt;&gt;Browser: 302 returnTo
+            else vaiTro = GIAO_VIEN
+                Ctrl--&gt;&gt;Browser: 302 /teacher/dashboard
+            else vaiTro = HOC_SINH
+                Ctrl--&gt;&gt;Browser: 302 /student/dashboard
+            end
+        end
+    end
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd02" data-export="sd-02-create-assign-publish-exam" data-kind="sequence">
+      <h2>SD-02 — Tạo đề → giao lớp → công bố đề</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor GV as Giáo viên
+    participant Browser as Trình duyệt
+    participant Ctrl as teacher-exam-controller
+    participant Svc as exam-service
+    participant DB as MySQL
+
+    Note over GV,DB: Bước 1 — Tạo đề nháp
+    GV-&gt;&gt;Browser: Form tạo đề (+ tùy chọn chọn câu)
+    Browser-&gt;&gt;Ctrl: POST /teacher/exams/create (examMetaRules)
+    Ctrl-&gt;&gt;Svc: createExam(giaoVienId, body)
+    Svc-&gt;&gt;DB: INSERT de_thi (trang_thai=NHAP, tong_diem=0)
+    opt Có cauHoiIds / diemCauHoi_*
+        Svc-&gt;&gt;DB: INSERT cau_hoi_de_thi
+        Svc-&gt;&gt;DB: UPDATE de_thi.tong_diem
+    end
+    Svc--&gt;&gt;Ctrl: examId
+    Ctrl--&gt;&gt;Browser: 302 /teacher/exams/:id
+
+    Note over GV,DB: Bước 2 — Giao đề cho lớp
+    GV-&gt;&gt;Browser: Chọn lớp
+    Browser-&gt;&gt;Ctrl: POST /teacher/exams/:id/assign
+    Ctrl-&gt;&gt;Svc: assignClass(examId, giaoVienId, lopHocId)
+    Svc-&gt;&gt;DB: Kiểm tra de_thi + lop_hoc thuộc GV
+    alt Đề DA_HUY
+        Svc--&gt;&gt;Ctrl: EXAM_NOT_EDITABLE (422)
+    else Đã giao trước đó
+        Svc--&gt;&gt;Ctrl: CONFLICT (409)
+    else OK
+        Svc-&gt;&gt;DB: INSERT phan_cong_de
+        Ctrl--&gt;&gt;Browser: Flash Đã giao đề
+    end
+
+    Note over GV,DB: Bước 3 — Công bố đề
+    GV-&gt;&gt;Browser: Bấm Công bố đề
+    Browser-&gt;&gt;Ctrl: POST /teacher/exams/:id/publish
+    Ctrl-&gt;&gt;Svc: publishExam(examId, giaoVienId)
+    Svc-&gt;&gt;DB: Kiểm tra NHAP, có câu, có lớp giao, tong_diem, thời gian
+    alt Thiếu điều kiện
+        Svc--&gt;&gt;Ctrl: VALIDATION_ERROR / EXAM_NOT_EDITABLE
+        Ctrl--&gt;&gt;Browser: Flash lỗi
+    else OK
+        Svc-&gt;&gt;DB: UPDATE de_thi SET trang_thai=DA_CONG_BO
+        Note over Svc,DB: Khóa sửa cấu trúc đề
+        Ctrl--&gt;&gt;Browser: Flash đã công bố
+    end
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd03" data-export="sd-03-start-attempt-freeze-questions" data-kind="sequence">
+      <h2>SD-03 — Bắt đầu bài + đóng băng câu</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor HS as Học sinh
+    participant Browser as Trình duyệt
+    participant Ctrl as attempt-controller
+    participant Svc as attempt-service
+    participant DB as MySQL
+
+    HS-&gt;&gt;Browser: Bấm Bắt đầu làm bài
+    Browser-&gt;&gt;Ctrl: POST /api/exams/:examId/classes/:classId/start
+    Note over Ctrl: requireStudent + startLimiter
+    Ctrl-&gt;&gt;Svc: startAttempt(examId, classId, hocSinhId)
+    Svc-&gt;&gt;DB: BEGIN + khóa de_thi / kiểm tra membership
+    alt Không thuộc lớp
+        Svc--&gt;&gt;Ctrl: NOT_CLASS_MEMBER (403)
+    else Đề chưa DA_CONG_BO
+        Svc--&gt;&gt;Ctrl: EXAM_NOT_PUBLISHED (422)
+    else Ngoài khung giờ / đã đóng
+        Svc--&gt;&gt;Ctrl: EXAM_TIME_NOT_OPEN / EXAM_CLOSED
+    else Hết số lần làm
+        Svc--&gt;&gt;Ctrl: ATTEMPT_LIMIT_REACHED (422)
+    else Đã có lượt DANG_LAM
+        Svc--&gt;&gt;Ctrl: 200 { attemptId, isNew:false }
+    else Tạo lượt mới
+        Svc-&gt;&gt;Svc: han_nop = MIN(bắt đầu + thời lượng, giờ đóng đề)
+        Svc-&gt;&gt;DB: INSERT luot_lam_bai (DANG_LAM)
+        alt tron_cau_hoi = true
+            Svc-&gt;&gt;Svc: Fisher–Yates trộn thứ tự
+        end
+        Svc-&gt;&gt;DB: INSERT cau_hoi_luot_lam (đóng băng thứ tự + điểm)
+        Svc-&gt;&gt;DB: INSERT nhat_ky_thi (BAT_DAU)
+        Svc-&gt;&gt;DB: COMMIT
+        Svc--&gt;&gt;Ctrl: 201 { attemptId, isNew:true }
+    end
+    Ctrl--&gt;&gt;Browser: JSON / redirect phòng thi
+    Browser--&gt;&gt;HS: GET /student/attempts/:attemptId
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd04" data-export="sd-04-autosave-answer-version" data-kind="sequence">
+      <h2>SD-04 — Autosave đáp án (`answer_version`)</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor HS as Học sinh
+    participant JS as exam-room.js
+    participant LS as localStorage
+    participant Ctrl as attempt-controller
+    participant Svc as attempt-service
+    participant DB as MySQL
+
+    HS-&gt;&gt;JS: Chọn / nhập đáp án
+    JS-&gt;&gt;JS: answerVersion++
+    JS-&gt;&gt;LS: math_exam_user_{uid}_attempt_{attemptId} (synced=false)
+    JS-&gt;&gt;JS: Debounce + queue theo câu
+    JS-&gt;&gt;Ctrl: PUT /api/attempts/:attemptId/answers/:questionId
+    Note over JS,Ctrl: Body: answerVersion, clientRequestId,&lt;br/&gt;selectedAnswerId / answerText / statementSelections
+    Ctrl-&gt;&gt;Svc: saveAnswer(...)
+    Svc-&gt;&gt;DB: BEGIN + FOR UPDATE luot_lam_bai
+    alt Không còn DANG_LAM
+        Svc--&gt;&gt;Ctrl: ATTEMPT_NOT_IN_PROGRESS (422)
+    else Quá han_nop_hieu_luc
+        Svc--&gt;&gt;Ctrl: DEADLINE_PASSED (422)
+    else answerVersion request nhỏ hơn hoặc bằng DB
+        Svc--&gt;&gt;Ctrl: OLD_ANSWER_VERSION (409)
+        Ctrl--&gt;&gt;JS: Không ghi đè
+    else Cùng clientRequestId + version (idempotent)
+        Svc--&gt;&gt;Ctrl: 200 OK (không ghi log mới)
+        Ctrl--&gt;&gt;JS: OK
+        JS-&gt;&gt;LS: synced=true
+    else Hợp lệ
+        Svc-&gt;&gt;DB: UPSERT chi_tiet_bai_lam
+        Svc-&gt;&gt;DB: INSERT nhat_ky_thi (LUU_DAP_AN)
+        Svc-&gt;&gt;DB: COMMIT
+        Svc--&gt;&gt;Ctrl: saved + answerVersion
+        Ctrl--&gt;&gt;JS: 200 OK
+        JS-&gt;&gt;LS: synced=true
+    end
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd05" data-export="sd-05-restore-offline-online" data-kind="sequence">
+      <h2>SD-05 — Khôi phục phiên (refresh / offline → online)</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor HS as Học sinh
+    participant Browser as Trình duyệt
+    participant JS as exam-room.js
+    participant LS as localStorage
+    participant Ctrl as attempt-controller
+    participant Svc as attempt-service
+    participant DB as MySQL
+
+    HS-&gt;&gt;Browser: F5 / mở lại phòng thi
+    Browser-&gt;&gt;JS: Load /student/attempts/:attemptId
+    JS-&gt;&gt;Ctrl: GET /api/attempts/:attemptId/state
+    Ctrl-&gt;&gt;Svc: getState(attemptId, hocSinhId)
+    Svc-&gt;&gt;DB: Đọc luot_lam_bai + cau_hoi_luot_lam + chi_tiet_bai_lam + dap_an
+    Note over Svc,DB: Không tạo lượt mới, không trộn lại câu&lt;br/&gt;Không trả la_dap_an_dung
+    Svc--&gt;&gt;Ctrl: state JSON
+    Ctrl--&gt;&gt;JS: 200 state
+    JS-&gt;&gt;JS: Render câu + đáp án từ server
+    JS-&gt;&gt;LS: Đọc pending
+    alt Lượt không còn DANG_LAM
+        JS-&gt;&gt;LS: discard local
+    else Có pending version mới hơn server
+        JS-&gt;&gt;Ctrl: PUT .../answers/:questionId (từng câu)
+        Ctrl-&gt;&gt;Svc: saveAnswer (SD-04)
+        Svc--&gt;&gt;JS: OK / OLD_ANSWER_VERSION
+        JS-&gt;&gt;LS: cập nhật synced
+    else Không pending
+        JS--&gt;&gt;HS: Trạng thái Đã lưu
+    end
+    Note over Browser,JS: window online → resyncPendingAnswers()
+    loop ~30 giây khi DANG_LAM
+        JS-&gt;&gt;Ctrl: POST /api/attempts/:attemptId/heartbeat
+        Ctrl-&gt;&gt;Svc: Cập nhật last_seen_at
+    end
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd06" data-export="sd-06-submit-auto-grade" data-kind="sequence">
+      <h2>SD-06 — Nộp bài + chấm tự động</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor HS as Học sinh
+    participant JS as exam-room.js
+    participant Ctrl as attempt-controller
+    participant Svc as attempt-service
+    participant Job as auto-submit-job
+    participant DB as MySQL
+
+    alt Nộp thủ công
+        HS-&gt;&gt;JS: Bấm Nộp bài
+        JS-&gt;&gt;JS: Flush debounce, chờ save pending/in-flight
+        JS-&gt;&gt;Ctrl: POST /api/attempts/:attemptId/submit
+        Note over Ctrl: requireStudent + submitLimiter
+        Ctrl-&gt;&gt;Svc: submitAttempt(..., auto=false)
+    else Hết giờ phía client
+        JS-&gt;&gt;Ctrl: POST .../submit { autoSubmit:true }
+        Ctrl-&gt;&gt;Svc: submitAttempt(..., auto flag)
+    else Job quét quá hạn (mỗi 45 giây)
+        Job-&gt;&gt;Svc: submitAttempt(..., auto=true, hocSinhId=null)
+    end
+
+    Svc-&gt;&gt;DB: BEGIN + FOR UPDATE luot_lam_bai
+    alt trang_thai != DANG_LAM
+        Svc--&gt;&gt;Ctrl: ATTEMPT_SUBMITTED (409)
+    else Client auto nhưng chưa tới hạn
+        Svc--&gt;&gt;Ctrl: { submitted:false, status:DANG_LAM }
+    else Hợp lệ
+        Svc-&gt;&gt;Svc: Chấm MOT_DAP_AN / DUNG_SAI / TRA_LOI_NGAN
+        Svc-&gt;&gt;DB: UPDATE chi_tiet_bai_lam (điểm)
+        alt Không còn câu TU_LUAN
+            Svc-&gt;&gt;DB: luot_lam_bai.trang_thai = DA_CHAM
+        else Nộp thủ công
+            Svc-&gt;&gt;DB: trang_thai = DA_NOP
+        else Nộp tự động
+            Svc-&gt;&gt;DB: trang_thai = TU_DONG_NOP
+        end
+        Svc-&gt;&gt;DB: INSERT nhat_ky_thi (NOP_BAI / TU_DONG_NOP)
+        Svc-&gt;&gt;DB: COMMIT
+        Svc--&gt;&gt;Ctrl: OK
+        Ctrl--&gt;&gt;JS: success
+        JS-&gt;&gt;JS: removeItem localStorage
+    end
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd07" data-export="sd-07-essay-grade-publish-results" data-kind="sequence">
+      <h2>SD-07 — Chấm tự luận → công bố kết quả → HS xem điểm</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor GV as Giáo viên
+    actor HS as Học sinh
+    participant Browser as Trình duyệt
+    participant GradeCtrl as teacher-attempt-controller
+    participant GradeSvc as grading-service
+    participant ExamCtrl as teacher-exam-controller
+    participant ExamSvc as exam-service
+    participant ResultCtrl as student-result-controller
+    participant ResultSvc as result-service
+    participant DB as MySQL
+
+    Note over GV,DB: 1) Chấm tự luận
+    GV-&gt;&gt;Browser: Nhập điểm / nhận xét câu TU_LUAN
+    Browser-&gt;&gt;GradeCtrl: POST /teacher/attempts/:attemptId/grade
+    GradeCtrl-&gt;&gt;GradeSvc: gradeAttempt(attemptId, giaoVienId, grades)
+    GradeSvc-&gt;&gt;DB: FOR UPDATE de_thi + luot_lam_bai
+    alt Đã công bố KQ / còn sự cố chờ / đang DANG_LAM
+        GradeSvc--&gt;&gt;GradeCtrl: CONFLICT / VALIDATION_ERROR
+    else OK
+        GradeSvc-&gt;&gt;DB: UPSERT điểm chi_tiet_bai_lam (TU_LUAN)
+        opt Mọi câu tự luận đã chấm
+            GradeSvc-&gt;&gt;DB: trang_thai = DA_CHAM
+        end
+        GradeCtrl--&gt;&gt;Browser: Flash đã lưu điểm chấm
+    end
+
+    Note over GV,DB: 2) Công bố kết quả
+    GV-&gt;&gt;Browser: Công bố kết quả (+ tùy chọn cho xem đáp án)
+    Browser-&gt;&gt;ExamCtrl: POST /teacher/exams/:id/publish-results
+    ExamCtrl-&gt;&gt;ExamSvc: publishResults(examId, giaoVienId, body)
+    ExamSvc-&gt;&gt;DB: Kiểm tra lượt + sự cố pending
+    alt Chưa đủ điều kiện
+        ExamSvc--&gt;&gt;ExamCtrl: VALIDATION_ERROR (blockers)
+        ExamCtrl--&gt;&gt;Browser: Flash lý do
+    else OK
+        ExamSvc-&gt;&gt;DB: da_cong_bo_ket_qua=TRUE, thoi_gian_cong_bo_ket_qua=NOW()
+        ExamCtrl--&gt;&gt;Browser: Flash đã công bố
+    end
+
+    Note over HS,DB: 3) Học sinh xem điểm
+    HS-&gt;&gt;Browser: Mở kết quả
+    Browser-&gt;&gt;ResultCtrl: GET /student/results/:attemptId
+    ResultCtrl-&gt;&gt;ResultSvc: getResultDetail(attemptId, hocSinhId)
+    alt Chưa công bố / chưa DA_CHAM
+        ResultSvc--&gt;&gt;ResultCtrl: RESULTS_NOT_PUBLISHED (422)
+    else OK
+        ResultSvc-&gt;&gt;DB: Đọc điểm (+ dap_an nếu cho_xem_dap_an)
+        ResultCtrl--&gt;&gt;Browser: Trang chi tiết kết quả
+    end
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd08" data-export="sd-08-incident-compensation" data-kind="sequence">
+      <h2>SD-08 — Báo sự cố → GV duyệt bù giờ</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor HS as Học sinh
+    actor GV as Giáo viên
+    participant Browser as Trình duyệt
+    participant StuCtrl as student-attempt-controller
+    participant TeaCtrl as teacher-incident-controller
+    participant Svc as incident-service
+    participant DB as MySQL
+
+    Note over HS,DB: 1) Học sinh báo sự cố
+    HS-&gt;&gt;Browser: Chọn loại + mô tả (không nhập giây bù)
+    Browser-&gt;&gt;StuCtrl: POST /student/attempts/:attemptId/incidents
+    Note over StuCtrl: incidentLimiter + reportIncidentRules
+    StuCtrl-&gt;&gt;Svc: reportIncident(...)
+    Svc-&gt;&gt;DB: BEGIN + khóa de_thi → luot_lam_bai
+    alt Đã công bố KQ / DA_CHAM / đã có sự cố chờ
+        Svc--&gt;&gt;StuCtrl: CONFLICT
+    else OK
+        Svc-&gt;&gt;DB: INSERT su_co_bai_thi (CHO_XAC_NHAN)
+        Note over Svc: loai: MAT_DIEN, MAT_MANG, LOI_TRINH_DUYET,...
+        StuCtrl--&gt;&gt;Browser: Flash đã gửi
+    end
+
+    Note over GV,DB: 2) Giáo viên duyệt + bù giờ
+    GV-&gt;&gt;Browser: Nhập so_giay_bu_gio (1..7200)
+    Browser-&gt;&gt;TeaCtrl: POST /teacher/incidents/:id/approve
+    TeaCtrl-&gt;&gt;Svc: approveIncident(id, giaoVienId, soGiayBuGio)
+    Svc-&gt;&gt;DB: BEGIN + khóa de_thi → luot_lam_bai → su_co
+    alt Đã duyệt trước đó
+        Svc--&gt;&gt;TeaCtrl: INCIDENT_ALREADY_REVIEWED (409)
+    else OK
+        Svc-&gt;&gt;DB: Cộng thoi_gian_bo_sung_giay (một lần)
+        Svc-&gt;&gt;DB: su_co.trang_thai = DA_CHAP_NHAN
+        opt Lượt đang DA_NOP / TU_DONG_NOP — mở lại hợp lệ
+            Svc-&gt;&gt;DB: trang_thai = DANG_LAM (reset điểm tự luận nếu cần)
+            Svc-&gt;&gt;DB: INSERT nhat_ky_thi (MO_LAI_SAU_SU_CO)
+        end
+        Svc-&gt;&gt;DB: COMMIT
+        Note over Svc,DB: han_nop_hieu_luc = han_nop + thoi_gian_bo_sung_giay
+        TeaCtrl--&gt;&gt;Browser: Flash đã duyệt
+    end
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd09" data-export="sd-09-join-class" data-kind="sequence">
+      <h2>SD-09 — Học sinh tham gia lớp bằng mã</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor HS as Học sinh
+    participant Browser as Trình duyệt
+    participant Ctrl as student-class-controller
+    participant Svc as class-service
+    participant DB as MySQL
+
+    HS-&gt;&gt;Browser: Nhập mã lớp
+    Browser-&gt;&gt;Ctrl: POST /student/classes/join (joinClassRules)
+    Ctrl-&gt;&gt;Svc: joinClass(hocSinhId, maLop)
+    Svc-&gt;&gt;DB: SELECT lop_hoc FOR UPDATE WHERE ma_lop = ?
+    alt Không có lớp
+        Svc--&gt;&gt;Ctrl: NOT_FOUND — Mã lớp không tồn tại
+        Ctrl--&gt;&gt;Browser: Flash lỗi
+    else trang_thai = LUU_TRU
+        Svc--&gt;&gt;Ctrl: CONFLICT — Lớp đã lưu trữ
+        Ctrl--&gt;&gt;Browser: Flash lỗi
+    else Đang là thành viên DANG_HOC
+        Svc--&gt;&gt;Ctrl: CONFLICT — Đã là thành viên
+        Ctrl--&gt;&gt;Browser: Flash lỗi
+    else Từng DA_ROI_LOP
+        Svc-&gt;&gt;DB: UPDATE thanh_vien_lop SET trang_thai=DANG_HOC
+        Ctrl--&gt;&gt;Browser: 302 /student/classes
+    else Thành viên mới
+        Svc-&gt;&gt;DB: INSERT thanh_vien_lop (DANG_HOC)
+        Ctrl--&gt;&gt;Browser: 302 /student/classes
+    end
+</pre>
+    </section>
+
+    <section class="card render-card" id="sd10" data-export="sd-10-create-question" data-kind="sequence">
+      <h2>SD-10 — Giáo viên tạo câu hỏi (4 loại)</h2>
+      <pre class="mermaid">sequenceDiagram
+    actor GV as Giáo viên
+    participant Browser as Trình duyệt
+    participant Upload as upload middleware
+    participant Ctrl as teacher-question-controller
+    participant Svc as question-service
+    participant DB as MySQL
+
+    GV-&gt;&gt;Browser: Chọn loại, lớp (khoi_lop), chủ đề, nội dung (+ ảnh)
+    Browser-&gt;&gt;Upload: POST /teacher/questions (multipart)
+    Upload-&gt;&gt;Ctrl: file + body (sau verifyDeferredCsrf)
+    Ctrl-&gt;&gt;Svc: createQuestion({ giaoVienId, body, file })
+    Svc-&gt;&gt;Svc: Validate theo loai_cau_hoi
+    Note over Svc: MOT_DAP_AN: đúng 1 đáp án đúng&lt;br/&gt;DUNG_SAI: 4 mệnh đề a–d&lt;br/&gt;TRA_LOI_NGAN: bắt buộc dap_an_ngan_chuan&lt;br/&gt;TU_LUAN: không bắt buộc dap_an
+    alt Chủ đề không thuộc GV / dữ liệu sai
+        Svc-&gt;&gt;Svc: Xóa file upload nếu có
+        Svc--&gt;&gt;Ctrl: VALIDATION_ERROR
+        Ctrl--&gt;&gt;Browser: Flash / form lỗi
+    else OK
+        Svc-&gt;&gt;DB: BEGIN
+        Svc-&gt;&gt;DB: INSERT cau_hoi (chu_de_id, khoi_lop, muc_do, anh_url...)
+        opt MOT_DAP_AN / DUNG_SAI
+            Svc-&gt;&gt;DB: INSERT dap_an (nhiều dòng)
+        end
+        Svc-&gt;&gt;DB: COMMIT
+        Svc--&gt;&gt;Ctrl: questionId
+        Ctrl--&gt;&gt;Browser: 302 /teacher/questions/:id
+    end
+</pre>
+    </section>
+    <h2 class="group-title" id="decomposition">III. Sơ đồ phân rã chức năng</h2>
+    
+    <section class="card render-card" id="functional-decomposition" data-export="functional-decomposition" data-kind="decomposition">
+      <h2>FDD-01 — Phân rã chức năng hệ thống JinMath (mức 0–2)</h2>
+      <pre class="mermaid">flowchart LR
+    SYS["0. HỆ THỐNG KIỂM TRA TOÁN TRỰC TUYẾN&lt;br/&gt;JinMath"]
+
+    SYS --&gt; A["1. Quản lý tài khoản&lt;br/&gt;và xác thực"]
+    SYS --&gt; B["2. Quản lý lớp học"]
+    SYS --&gt; C["3. Quản lý ngân hàng&lt;br/&gt;câu hỏi"]
+    SYS --&gt; D["4. Quản lý đề thi"]
+    SYS --&gt; E["5. Tổ chức làm bài&lt;br/&gt;trực tuyến"]
+    SYS --&gt; F["6. Chấm điểm và&lt;br/&gt;công bố kết quả"]
+    SYS --&gt; G["7. Quản lý sự cố&lt;br/&gt;và bù giờ"]
+    SYS --&gt; H["8. Thống kê, nhật ký&lt;br/&gt;và an toàn hệ thống"]
+
+    A --&gt; A1["1.1 Đăng ký học sinh"]
+    A --&gt; A2["1.2 Đăng nhập / đăng xuất"]
+    A --&gt; A3["1.3 Quên và đặt lại mật khẩu"]
+    A --&gt; A4["1.4 Quản lý session và phân quyền&lt;br/&gt;Giáo viên / Học sinh"]
+
+    B --&gt; B1["2.1 Tạo, sửa lớp"]
+    B --&gt; B2["2.2 Lưu trữ / xóa lớp"]
+    B --&gt; B3["2.3 Quản lý thành viên"]
+    B --&gt; B4["2.4 Tham gia lớp bằng mã"]
+    B --&gt; B5["2.5 Rời lớp có kiểm tra&lt;br/&gt;bài đang làm"]
+
+    C --&gt; C1["3.1 Quản lý chủ đề"]
+    C --&gt; C2["3.2 Tạo / sửa / sao chép câu hỏi&lt;br/&gt;Một đáp án · Đúng/Sai 4 mệnh đề&lt;br/&gt;Trả lời ngắn · Tự luận"]
+    C --&gt; C3["3.3 Phân loại khối lớp,&lt;br/&gt;mức độ, chủ đề"]
+    C --&gt; C4["3.4 Nội dung LaTeX&lt;br/&gt;và hình ảnh"]
+    C --&gt; C5["3.5 Bảo toàn câu hỏi&lt;br/&gt;đã có lịch sử thi"]
+    D --&gt; D1["4.1 Tạo / sửa đề nháp"]
+    D --&gt; D2["4.2 Chọn câu và&lt;br/&gt;thiết lập điểm"]
+    D --&gt; D3["4.3 Tính tổng điểm"]
+    D --&gt; D4["4.4 Giao / hủy giao&lt;br/&gt;đề cho lớp"]
+    D --&gt; D5["4.5 Công bố đề&lt;br/&gt;Kiểm tra câu hỏi, lớp được giao,&lt;br/&gt;thời gian và tổng điểm"]
+    D --&gt; D6["4.6 Hủy / xóa đề&lt;br/&gt;theo chính sách"]
+    E --&gt; E1["5.1 Kiểm tra quyền,&lt;br/&gt;thời gian, số lần làm"]
+    E --&gt; E2["5.2 Tạo / tiếp tục&lt;br/&gt;lượt làm"]
+    E --&gt; E3["5.3 Đóng băng và&lt;br/&gt;trộn thứ tự câu"]
+    E --&gt; E4["5.4 Làm bài / đánh dấu câu"]
+    E --&gt; E5["5.5 Autosave lên server&lt;br/&gt;answerVersion chống request cũ&lt;br/&gt;clientRequestId đảm bảo idempotent"]
+    E --&gt; E6["5.6 Lưu tạm localStorage"]
+    E --&gt; E7["5.7 Khôi phục và&lt;br/&gt;đồng bộ khi có mạng"]
+    E --&gt; E8["5.8 Heartbeat / đồng hồ&lt;br/&gt;theo thời gian server"]
+    E --&gt; E9["5.9 Nộp thủ công /&lt;br/&gt;tự nộp khi hết giờ"]
+    F --&gt; F1["6.1 Chấm tự động&lt;br/&gt;Một đáp án · Đúng/Sai theo mệnh đề&lt;br/&gt;Trả lời ngắn đã chuẩn hóa"]
+    F --&gt; F2["6.2 Giáo viên chấm tự luận"]
+    F --&gt; F3["6.3 Tính lại tổng điểm"]
+    F --&gt; F4["6.4 Kiểm tra điều kiện&lt;br/&gt;công bố kết quả"]
+    F --&gt; F5["6.5 Công bố kết quả"]
+    F --&gt; F6["6.6 Học sinh xem điểm&lt;br/&gt;và đáp án được phép"]
+    G --&gt; G1["7.1 Học sinh báo sự cố"]
+    G --&gt; G2["7.2 Phát hiện gián đoạn&lt;br/&gt;qua heartbeat"]
+    G --&gt; G3["7.3 Giáo viên duyệt / từ chối"]
+    G --&gt; G4["7.4 Cộng thời gian bù"]
+    G --&gt; G5["7.5 Mở lại bài đã nộp&lt;br/&gt;và đặt lại điểm cần thiết"]
+
+    H --&gt; H1["8.1 Dashboard giáo viên / học sinh"]
+    H --&gt; H2["8.2 Thống kê theo đề"]
+    H --&gt; H3["8.3 Nhật ký sự kiện thi"]
+    H --&gt; H4["8.4 CSRF và rate limit"]
+    H --&gt; H5["8.5 Kiểm tra quyền sở hữu"]
+    H --&gt; H6["8.6 Upload an toàn và&lt;br/&gt;xử lý lỗi"]
+
+    classDef root fill:#173b6c,color:#fff,stroke:#0e2748,stroke-width:2px;
+    classDef module fill:#dbeafe,color:#102a43,stroke:#2563eb,stroke-width:1.5px;
+    classDef function fill:#fff,color:#1f2937,stroke:#94a3b8;
+    class SYS root;
+    class A,B,C,D,E,F,G,H module;
+    class A1,A2,A3,A4,B1,B2,B3,B4,B5,C1,C2,C3,C4,C5,D1,D2,D3,D4,D5,D6,E1,E2,E3,E4,E5,E6,E7,E8,E9,F1,F2,F3,F4,F5,F6,G1,G2,G3,G4,G5,H1,H2,H3,H4,H5,H6 function;
+</pre>
+    </section>
+  </main>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad:true,
+      theme:'neutral',
+      securityLevel:'loose',
+      flowchart:{ htmlLabels:true, curve:'basis', nodeSpacing:26, rankSpacing:42 },
+      sequence:{ actorMargin:32, messageMargin:38, noteMargin:12, width:170 }
+    });
+  </script>
+</body>
+</html>

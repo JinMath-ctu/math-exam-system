@@ -1,0 +1,47 @@
+@startuml UCD-01-Tong-quan
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FEFEFE
+  BorderColor #333333
+}
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #222222
+}
+
+actor "Giáo viên\n(chủ hệ thống)" as GV
+actor "Học sinh" as HS
+
+rectangle "Hệ thống kiểm tra Toán trực tuyến (JinMath)" {
+  usecase "Đăng nhập /\nĐăng xuất" as LOGIN
+  usecase "Đăng ký\nhọc sinh" as REG
+  usecase "Quản lý lớp\n& thành viên" as CLS
+  usecase "Tham gia lớp\nbằng mã" as JOIN
+  usecase "Quản lý chủ đề\n& câu hỏi" as BANK
+  usecase "Tạo đề / giao /\ncông bố đề" as EXAM
+  usecase "Xem đề\nđược giao" as VIEW
+  usecase "Làm bài &\nnộp bài" as TAKE
+  usecase "Chấm điểm /\ncông bố KQ /\nthống kê" as GRADE
+  usecase "Xem kết quả" as RESULT
+  usecase "Báo sự cố" as REPORT
+  usecase "Xử lý sự cố\n(bù giờ)" as HANDLE
+}
+
+GV -- LOGIN
+GV -- CLS
+GV -- BANK
+GV -- EXAM
+GV -- GRADE
+GV -- HANDLE
+
+HS -- REG
+HS -- LOGIN
+HS -- JOIN
+HS -- VIEW
+HS -- TAKE
+HS -- RESULT
+HS -- REPORT
+@enduml

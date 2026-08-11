@@ -1,0 +1,19 @@
+<% if (typeof flash !== 'undefined' && flash) { %>
+  <div class="flash-container" aria-live="polite">
+    <% (flash.success || []).forEach(function(message) { %>
+      <div class="flash flash-success" role="status"><%= message %></div>
+    <% }); %>
+    <% (flash.error || []).forEach(function(message) { %>
+      <div class="flash flash-error" role="alert"><%= message %></div>
+    <% }); %>
+    <% (flash.info || []).forEach(function(message) { %>
+      <div class="flash flash-info" role="status"><%= message %></div>
+    <% }); %>
+  </div>
+<% } %>
+
+<% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+  <div class="flash-container">
+    <div class="flash flash-error" role="alert"><%= errorMessage %></div>
+  </div>
+<% } %>

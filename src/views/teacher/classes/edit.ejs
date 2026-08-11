@@ -1,0 +1,46 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container auth-container">
+    <div class="card">
+      <p><a href="/teacher/classes/<%= cls.id %>">&larr; <%= cls.ten_lop %></a></p>
+      <h1>Sửa lớp học</h1>
+
+      <%- include('../../partials/flash') %>
+
+      <form action="/teacher/classes/<%= cls.id %>?_method=PUT" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="maLop">Mã lớp</label>
+          <input type="text" id="maLop" value="<%= cls.ma_lop %>" disabled>
+          <span class="field-hint">Mã lớp không thể thay đổi sau khi tạo.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="tenLop">Tên lớp</label>
+          <input
+            type="text"
+            id="tenLop"
+            name="tenLop"
+            value="<%= formData.tenLop || '' %>"
+            required
+            maxlength="150"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="moTa">Mô tả</label>
+          <textarea id="moTa" name="moTa" rows="3"><%= formData.moTa || '' %></textarea>
+        </div>
+
+        <div class="card-actions">
+          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+          <a href="/teacher/classes/<%= cls.id %>" class="btn btn-secondary">Hủy</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

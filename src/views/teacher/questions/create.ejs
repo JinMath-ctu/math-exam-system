@@ -1,0 +1,318 @@
+<%
+const selected = (value, target) => String(value) === String(target) ? 'selected' : '';
+const dapAnList = Array.isArray(formData.dapAnNoiDung) ? formData.dapAnNoiDung : (formData.dapAnNoiDung ? [formData.dapAnNoiDung] : ['', '', '', '']);
+const correctIndex = formData.correctIndex !== undefined && formData.correctIndex !== '' ? Number(formData.correctIndex) : null;
+const menhDeLabels = ['a', 'b', 'c', 'd'];
+const menhDeList = Array.isArray(formData.menhDeNoiDung)
+  ? formData.menhDeNoiDung
+  : (formData.menhDeNoiDung ? [formData.menhDeNoiDung] : ['', '', '', '']);
+while (menhDeList.length < 4) menhDeList.push('');
+const menhDeKeys = Array.isArray(formData.menhDeLaDung)
+  ? formData.menhDeLaDung
+  : (formData.menhDeLaDung !== undefined && formData.menhDeLaDung !== null ? [formData.menhDeLaDung] : ['', '', '', '']);
+while (menhDeKeys.length < 4) menhDeKeys.push('');
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/teacher/questions">&larr; Ngân hàng câu hỏi</a></p>
+
+    <header class="page-header">
+      <h1>Tạo câu hỏi</h1>
+      <p class="page-lead">Chọn loại câu hỏi rồi soạn nội dung. Hỗ trợ công thức Toán qua LaTeX (đặt giữa dấu $...$).</p>
+    </header>
+
+    <%- include('../../partials/flash') %>
+
+    <div class="question-form-layout">
+      <div class="card">
+        <form action="/teacher/questions/create" method="POST" enctype="multipart/form-data" class="form" id="question-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="loaiCauHoi">Loại câu hỏi</label>
+              <select id="loaiCauHoi" name="loaiCauHoi" required>
+                <option value="">-- Chọn loại --</option>
+                <% questionTypes.forEach(function(type) { %>
+                  <option value="<%= type %>" <%= selected(formData.loaiCauHoi, type) %>>
+                    <%= ({MOT_DAP_AN:'Một đáp án', DUNG_SAI:'Đúng/Sai', TRA_LOI_NGAN:'Trả lời ngắn', TU_LUAN:'Tự luận'})[type] %>
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="chuDeId">Chủ đề</label>
+              <select id="chuDeId" name="chuDeId">
+                <option value="">-- Không xác định --</option>
+                <% topics.forEach(function(topic) { %>
+                  <option value="<%= topic.id %>" <%= selected(formData.chuDeId, topic.id) %>><%= topic.ten_chu_de %></option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="khoiLop">Lớp</label>
+              <select id="khoiLop" name="khoiLop">
+                <option value="">-- Không xác định --</option>
+                <% for (let k = 1; k <= 12; k += 1) { %>
+                  <option value="<%= k %>" <%= selected(formData.khoiLop, k) %>>Lớp <%= k %></option>
+                <% } %>
+              </select>
+              <span class="field-hint">Dùng để lọc câu theo khối khi soạn đề.</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="noiDung">Nội dung câu hỏi</label>
+            <div data-math-toolbar></div>
+            <textarea id="noiDung" name="noiDung" rows="4" required placeholder="Ví dụ: Phương trình bậc hai có nghiệm là:"><%= formData.noiDung || '' %></textarea>
+            <span class="field-hint">
+              Không cần biết mã: bấm nút công thức ở trên, hoặc gõ chữ thường.
+              Câu khó (bảng biến thiên, hình): soạn Word/sách → chụp ảnh → tải ở mục Ảnh minh họa.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label>Xem trước</label>
+            <div id="preview-noi-dung" class="katex-preview katex-content"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="noiDungLatex">Nội dung LaTeX thay thế (tùy chọn — dành cho người quen mã)</label>
+            <textarea id="noiDungLatex" name="noiDungLatex" rows="2" placeholder="Có thể bỏ trống"><%= formData.noiDungLatex || '' %></textarea>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="mucDo">Mức độ</label>
+              <select id="mucDo" name="mucDo" required>
+                <option value="NHAN_BIET" <%= selected(formData.mucDo, 'NHAN_BIET') %>>Nhận biết</option>
+                <option value="THONG_HIEU" <%= selected(formData.mucDo, 'THONG_HIEU') %>>Thông hiểu</option>
+                <option value="VAN_DUNG" <%= selected(formData.mucDo, 'VAN_DUNG') %>>Vận dụng</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="diemMacDinh">Điểm mặc định</label>
+              <input type="number" id="diemMacDinh" name="diemMacDinh" step="0.25" min="0.25" value="<%= formData.diemMacDinh || '1' %>" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="anh">Ảnh minh họa — đồ thị / hình học / đề từ Word</label>
+            <input type="file" id="anh" name="anh" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+            <span class="field-hint">
+              Có thể <strong>copy ảnh rồi Ctrl+V dán</strong>, kéo-thả, hoặc chọn file.
+              Không cần LaTeX cho đồ thị/hình. JPG/PNG/WEBP, tối đa 5MB.
+            </span>
+          </div>
+
+          <div class="answer-section" data-type="MOT_DAP_AN">
+            <h3>Danh sách đáp án</h3>
+            <p class="field-hint">
+              Bấm vào ô đáp án → dùng thanh <strong>Chèn công thức</strong> (phân số, vô cực, vector…).
+              Hoặc chỉ gõ số/chữ đơn giản (ví dụ <code>3</code>, <code>-1</code>).
+              Nếu đáp án quá phức tạp: ghi ngắn A/B/C/D và để ảnh minh họa chứa đủ công thức.
+            </p>
+            <div data-math-toolbar></div>
+            <div id="mot-dap-an-rows" class="answer-list">
+              <% 
+                const formulaPlaceholders = [
+                  'Ví dụ: bấm “Phân số” hoặc gõ 3',
+                  'Ví dụ: bấm “Min” hoặc gõ -5',
+                  'Ví dụ: bấm “Vector AB”',
+                  'Ví dụ: đáp án D',
+                ];
+                dapAnList.forEach(function(value, index) {
+                  const letter = String.fromCharCode(65 + index);
+                  const ph = formulaPlaceholders[index] || ('Nội dung đáp án ' + letter);
+              %>
+                <div class="answer-row">
+                  <span class="statement-label"><%= letter %>.</span>
+                  <input type="radio" name="correctIndex" value="<%= index %>" <%= correctIndex === index ? 'checked' : '' %> aria-label="Đáp án đúng <%= letter %>">
+                  <div class="answer-formula-fields">
+                    <textarea name="dapAnNoiDung" rows="2" placeholder="<%= ph %>"><%= value %></textarea>
+                    <div class="answer-preview katex-content" aria-live="polite"></div>
+                  </div>
+                  <button type="button" class="btn btn-danger btn-sm remove-answer-row">Xóa</button>
+                </div>
+              <% }); %>
+            </div>
+            <button type="button" id="add-answer-row" class="btn btn-secondary btn-sm">+ Thêm đáp án</button>
+          </div>
+
+          <div class="answer-section" data-type="DUNG_SAI">
+            <h3>Bốn mệnh đề đúng/sai</h3>
+            <p class="field-hint">
+              Mỗi câu đúng/sai gồm 4 mệnh đề (a–d). Điểm: 4 đúng = đủ điểm; 1 sai = 0.5×;
+              2 sai = 0.25×; 3 sai = 0.1×; 4 sai = 0. Dùng thanh chèn công thức nếu cần.
+            </p>
+            <div data-math-toolbar></div>
+            <div class="answer-list">
+              <% menhDeLabels.forEach(function(label, index) { %>
+                <div class="answer-row answer-row-statement">
+                  <span class="statement-label"><%= label %>)</span>
+                  <div class="answer-formula-fields">
+                    <textarea name="menhDeNoiDung" rows="2" placeholder="Nội dung mệnh đề <%= label %> (có thể dùng $...$)"><%= menhDeList[index] || '' %></textarea>
+                    <div class="answer-preview katex-content" aria-live="polite"></div>
+                  </div>
+                  <div class="statement-key" role="group" aria-label="Đáp án chuẩn mệnh đề <%= label %>">
+                    <label>
+                      <input type="radio" name="menhDeLaDung[<%= index %>]" value="1" <%= String(menhDeKeys[index]) === '1' ? 'checked' : '' %>>
+                      Đúng
+                    </label>
+                    <label>
+                      <input type="radio" name="menhDeLaDung[<%= index %>]" value="0" <%= String(menhDeKeys[index]) === '0' ? 'checked' : '' %>>
+                      Sai
+                    </label>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+
+          <div class="answer-section form-group" data-type="TRA_LOI_NGAN">
+            <label for="dapAnNganChuan">Đáp án chuẩn</label>
+            <input
+              type="text"
+              id="dapAnNganChuan"
+              name="dapAnNganChuan"
+              value="<%= formData.dapAnNganChuan || '' %>"
+              maxlength="500"
+              placeholder="Ví dụ: 5 ; 0.5 ; 0,5 ; 1/2 ; 1 1/2"
+            >
+            <span class="field-hint">
+              Chấp nhận số nguyên, thập phân (<code>0.5</code> hoặc <code>0,5</code>), phân số (<code>1/2</code>), hỗn số (<code>1 1/2</code>).
+              Nhiều dạng đúng cách nhau bằng <code>|</code>, ví dụ <code>1/2|0.5|0,5</code>.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="loiGiai">Lời giải (tùy chọn)</label>
+            <textarea id="loiGiai" name="loiGiai" rows="3" placeholder="Hướng dẫn giải, hiển thị cho học sinh sau khi công bố kết quả"><%= formData.loiGiai || '' %></textarea>
+          </div>
+
+          <div class="card-actions">
+            <button type="submit" class="btn btn-primary">Tạo câu hỏi</button>
+            <a href="/teacher/questions" class="btn btn-secondary">Hủy</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+<%- include('../../partials/katex-assets') %>
+<script src="/js/math-toolbar.js"></script>
+<script src="/js/question-image-paste.js"></script>
+<script>
+  (function () {
+    var typeSelect = document.getElementById('loaiCauHoi');
+    var sections = document.querySelectorAll('.answer-section');
+
+    function syncSections() {
+      var type = typeSelect.value;
+      sections.forEach(function (section) {
+        section.style.display = section.dataset.type === type ? '' : 'none';
+      });
+    }
+
+    typeSelect.addEventListener('change', syncSections);
+    syncSections();
+
+    var rowsContainer = document.getElementById('mot-dap-an-rows');
+    var addButton = document.getElementById('add-answer-row');
+
+    function syncFormulaPreview(row) {
+      var input = row.querySelector('textarea[name="dapAnNoiDung"], textarea[name="menhDeNoiDung"]');
+      var preview = row.querySelector('.answer-preview');
+      if (!input || !preview) return;
+      preview.textContent = input.value.trim() ? input.value : '(trống)';
+      if (window.renderMathIn) {
+        window.renderMathIn(preview);
+      }
+    }
+
+    function bindFormulaPreview(row) {
+      var input = row.querySelector('textarea[name="dapAnNoiDung"], textarea[name="menhDeNoiDung"]');
+      if (!input || input.dataset.previewBound === '1') return;
+      input.dataset.previewBound = '1';
+      input.addEventListener('input', function () { syncFormulaPreview(row); });
+      syncFormulaPreview(row);
+    }
+
+    function reindexAnswerRows() {
+      Array.prototype.forEach.call(rowsContainer.children, function (row, index) {
+        var letter = String.fromCharCode(65 + index);
+        var labelEl = row.querySelector('.statement-label');
+        var correctInput = row.querySelector('input[name="correctIndex"]');
+        var contentInput = row.querySelector('textarea[name="dapAnNoiDung"]');
+
+        if (labelEl) {
+          labelEl.textContent = letter + '.';
+        }
+        if (correctInput) {
+          correctInput.value = String(index);
+          correctInput.setAttribute('aria-label', 'Đáp án đúng ' + letter);
+        }
+        if (contentInput && !contentInput.value) {
+          contentInput.placeholder = 'Nội dung đáp án ' + letter + ' — dùng $...$ cho công thức';
+        }
+      });
+    }
+
+    function bindRemove(row) {
+      var removeBtn = row.querySelector('.remove-answer-row');
+      removeBtn.addEventListener('click', function () {
+        if (rowsContainer.children.length > 2) {
+          row.remove();
+          reindexAnswerRows();
+        }
+      });
+    }
+
+    Array.prototype.forEach.call(rowsContainer.children, function (row) {
+      bindRemove(row);
+      bindFormulaPreview(row);
+    });
+    reindexAnswerRows();
+
+    addButton.addEventListener('click', function () {
+      var index = rowsContainer.children.length;
+      var letter = String.fromCharCode(65 + index);
+      var row = document.createElement('div');
+      row.className = 'answer-row';
+      row.innerHTML =
+        '<span class="statement-label">' + letter + '.</span>' +
+        '<input type="radio" name="correctIndex" value="' + index + '" aria-label="Đáp án đúng ' + letter + '">' +
+        '<div class="answer-formula-fields">' +
+          '<textarea name="dapAnNoiDung" rows="2" placeholder="Nội dung đáp án ' + letter + ' — dùng $...$ cho công thức"></textarea>' +
+          '<div class="answer-preview katex-content" aria-live="polite"></div>' +
+        '</div>' +
+        '<button type="button" class="btn btn-danger btn-sm remove-answer-row">Xóa</button>';
+      rowsContainer.appendChild(row);
+      bindRemove(row);
+      bindFormulaPreview(row);
+      reindexAnswerRows();
+    });
+
+    document.querySelectorAll('.answer-row-statement').forEach(bindFormulaPreview);
+
+    var noiDungInput = document.getElementById('noiDung');
+    var preview = document.getElementById('preview-noi-dung');
+
+    function updatePreview() {
+      preview.textContent = noiDungInput.value || '(chưa có nội dung)';
+      if (window.renderMathIn) {
+        window.renderMathIn(preview);
+      }
+    }
+
+    noiDungInput.addEventListener('input', updatePreview);
+    updatePreview();
+  })();
+</script>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

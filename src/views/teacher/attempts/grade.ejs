@@ -1,0 +1,164 @@
+<%
+const statusLabels = {
+  DANG_LAM: 'Đang làm',
+  DA_NOP: 'Đã nộp',
+  TU_DONG_NOP: 'Tự động nộp',
+  DA_CHAM: 'Đã chấm',
+};
+const typeLabels = { MOT_DAP_AN: 'Một đáp án', DUNG_SAI: 'Đúng/Sai', TRA_LOI_NGAN: 'Trả lời ngắn', TU_LUAN: 'Tự luận' };
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/teacher/exams/<%= attempt.de_thi_id %>/attempts">&larr; Danh sách lượt làm</a></p>
+
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <div class="card-header-row">
+        <h1>Chi tiết bài làm</h1>
+        <span class="badge <%= attempt.trang_thai === 'DA_CHAM' ? 'badge-success' : 'badge-muted' %>"><%= statusLabels[attempt.trang_thai] %></span>
+      </div>
+      <p class="page-lead"><%= attempt.ten_de %></p>
+    </header>
+
+    <div class="card">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Học sinh</span>
+          <span class="detail-value"><%= attempt.hoc_sinh_ho_ten %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Lớp</span>
+          <span class="detail-value"><%= attempt.ten_lop %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Lần làm</span>
+          <span class="detail-value"><%= attempt.lan_thu %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Nộp lúc</span>
+          <span class="detail-value"><%= attempt.thoi_gian_nop ? formatDateTimeVN(attempt.thoi_gian_nop) : '—' %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Điểm tự động</span>
+          <span class="detail-value"><%= Number(attempt.diem_tu_dong).toFixed(2) %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Tổng điểm hiện tại</span>
+          <span class="detail-value"><%= Number(attempt.tong_diem).toFixed(2) %> / <%= Number(attempt.de_tong_diem).toFixed(2) %></span>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Toàn bộ câu trả lời</h2>
+    <% reviewQuestions.forEach(function(q) { %>
+      <div class="review-item <%= q.la_dung === 1 || q.la_dung === true ? 'is-correct' : (q.la_dung === 0 || q.la_dung === false ? 'is-wrong' : '') %>">
+        <div class="card-header-row">
+          <h3>Câu <%= q.thu_tu_hien_thi %> <span class="field-hint">(<%= typeLabels[q.loai_cau_hoi] || q.loai_cau_hoi %>)</span></h3>
+          <span class="badge badge-muted"><%= Number(q.diem_dat_duoc || 0).toFixed(2) %> / <%= Number(q.diem_toi_da).toFixed(2) %></span>
+        </div>
+        <div class="katex-content question-content"><%= q.noi_dung %></div>
+
+        <% if (q.loai_cau_hoi === 'MOT_DAP_AN') { %>
+          <ul class="answer-view-list">
+            <% q.options.forEach(function(opt, index) { %>
+              <li class="<%= opt.la_dap_an_dung ? 'is-correct' : '' %> <%= Number(q.dap_an_da_chon_id) === Number(opt.id) ? 'is-selected' : '' %>">
+                <span class="katex-content"><strong><%= String.fromCharCode(65 + index) %>.</strong> <%= opt.noi_dung %></span>
+                <span>
+                  <% if (opt.la_dap_an_dung) { %><span class="badge badge-success">Đáp án đúng</span><% } %>
+                  <% if (Number(q.dap_an_da_chon_id) === Number(opt.id)) { %><span class="badge badge-info">Học sinh chọn</span><% } %>
+                </span>
+              </li>
+            <% }); %>
+            <% if (q.dap_an_da_chon_id == null) { %><li><span class="field-hint">Học sinh bỏ trống.</span></li><% } %>
+          </ul>
+        <% } else if (q.loai_cau_hoi === 'DUNG_SAI') { %>
+          <ul class="answer-view-list">
+            <% q.options.forEach(function(opt, index) {
+              const selected = q.statementSelections[String(opt.id)];
+              const selectedLabel = selected === true ? 'Đúng' : (selected === false ? 'Sai' : 'Bỏ trống');
+            %>
+              <li>
+                <span class="katex-content"><strong><%= ['a','b','c','d'][index] || index + 1 %>)</strong> <%= opt.noi_dung %></span>
+                <span><span class="badge badge-muted">HS: <%= selectedLabel %></span> <span class="badge badge-success">Đáp án: <%= opt.la_dap_an_dung ? 'Đúng' : 'Sai' %></span></span>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <div class="answer-block">
+            <span class="detail-label">Bài làm của học sinh</span>
+            <div class="student-answer katex-content"><%= q.noi_dung_tra_loi || '(Học sinh không trả lời)' %></div>
+          </div>
+          <% if (q.loai_cau_hoi === 'TRA_LOI_NGAN') { %>
+            <p><strong>Đáp án chuẩn:</strong> <%= q.dap_an_ngan_chuan || '—' %></p>
+          <% } %>
+        <% } %>
+        <p class="field-hint">Phiên bản lưu: <%= q.answer_version || 0 %><%= q.saved_at_server ? ` · Lưu gần nhất: ${formatDateTimeVN(q.saved_at_server)}` : '' %><%= q.da_danh_dau ? ' · Học sinh đã đánh dấu xem lại' : '' %></p>
+      </div>
+    <% }); %>
+
+    <h2 class="section-title" id="cham-tu-luan">Chấm câu tự luận</h2>
+    <% if (!canGrade && gradingBlockedReason) { %>
+      <div class="flash-container">
+        <div class="flash flash-warning" role="status"><%= gradingBlockedReason %> Màn hình này đang ở chế độ chỉ đọc.</div>
+      </div>
+    <% } %>
+    <% if (essayQuestions.length === 0) { %>
+      <div class="card empty-state">
+        <p>Lượt làm này không có câu tự luận.</p>
+      </div>
+    <% } else { %>
+      <form action="/teacher/attempts/<%= attempt.id %>/grade" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <% essayQuestions.forEach(function(q) { %>
+          <div class="card essay-grade-card">
+            <div class="card-header-row">
+              <h3>Câu <%= q.thu_tu_hien_thi %> <span class="field-hint">(<%= Number(q.diem).toFixed(2) %> điểm)</span></h3>
+              <% if (q.da_cham) { %><span class="badge badge-success">Đã chấm</span><% } else { %><span class="badge badge-muted">Chưa chấm</span><% } %>
+            </div>
+
+            <div class="katex-content question-content"><%= q.noi_dung %></div>
+
+            <div class="answer-block">
+              <span class="detail-label">Bài làm của học sinh</span>
+              <div class="student-answer katex-content"><%= q.noi_dung_tra_loi ? q.noi_dung_tra_loi : '(Học sinh không trả lời)' %></div>
+            </div>
+
+            <% if (q.loi_giai) { %>
+              <details class="inline-edit">
+                <summary>Xem lời giải tham khảo</summary>
+                <div class="inline-edit-form katex-content"><%= q.loi_giai %></div>
+              </details>
+            <% } %>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="diem-<%= q.cau_hoi_id %>">Điểm đạt được (0 – <%= Number(q.diem).toFixed(2) %>)</label>
+                <input type="number" id="diem-<%= q.cau_hoi_id %>" name="grades[<%= q.cau_hoi_id %>][diemDatDuoc]"
+                       step="0.25" min="0" max="<%= q.diem %>"
+                       value="<%= q.diem_dat_duoc != null ? q.diem_dat_duoc : '' %>" <%= canGrade ? '' : 'disabled' %>>
+              </div>
+              <div class="form-group">
+                <label for="nhanxet-<%= q.cau_hoi_id %>">Nhận xét (tùy chọn)</label>
+                <input type="text" id="nhanxet-<%= q.cau_hoi_id %>" name="grades[<%= q.cau_hoi_id %>][nhanXet]"
+                       value="<%= q.nhan_xet || '' %>" maxlength="2000" <%= canGrade ? '' : 'disabled' %>>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+
+        <% if (canGrade) { %>
+          <div class="card-actions">
+            <button type="submit" class="btn btn-primary">Lưu điểm chấm</button>
+          </div>
+        <% } %>
+      </form>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/katex-assets') %>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

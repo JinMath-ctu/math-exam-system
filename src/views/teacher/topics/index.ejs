@@ -1,0 +1,133 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <h1>Chủ đề</h1>
+      <p class="page-lead">Quản lý chủ đề dùng để phân loại câu hỏi trong ngân hàng đề.</p>
+    </header>
+
+    <div class="card">
+      <h2>Tạo chủ đề mới</h2>
+      <form action="/teacher/topics" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="tenChuDe">Tên chủ đề</label>
+          <input
+            type="text"
+            id="tenChuDe"
+            name="tenChuDe"
+            required
+            maxlength="150"
+            placeholder="Phương trình bậc hai"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="khoiLop">Khối lớp</label>
+          <select id="khoiLop" name="khoiLop">
+            <option value="">-- Không xác định --</option>
+            <% for (let k = 1; k <= 12; k += 1) { %>
+              <option value="<%= k %>">Lớp <%= k %></option>
+            <% } %>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="moTa">Mô tả</label>
+          <textarea id="moTa" name="moTa" rows="2" placeholder="Mô tả ngắn (không bắt buộc)"></textarea>
+        </div>
+
+        <div class="card-actions">
+          <button type="submit" class="btn btn-primary">Tạo chủ đề</button>
+        </div>
+      </form>
+    </div>
+
+    <h2 class="section-title">Danh sách chủ đề</h2>
+
+    <div class="toolbar">
+      <form action="/teacher/topics" method="GET" class="filter-form">
+        <div class="form-group">
+          <label for="q">Tìm kiếm</label>
+          <input type="text" id="q" name="q" value="<%= filters.q %>" placeholder="Tên chủ đề">
+        </div>
+        <div class="form-group">
+          <label for="khoiLopFilter">Khối lớp</label>
+          <select id="khoiLopFilter" name="khoiLop">
+            <option value="">Tất cả</option>
+            <% for (let k = 1; k <= 12; k += 1) { %>
+              <option value="<%= k %>" <%= String(filters.khoiLop) === String(k) ? 'selected' : '' %>>Lớp <%= k %></option>
+            <% } %>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Lọc</button>
+      </form>
+    </div>
+
+    <% if (topics.length === 0) { %>
+      <div class="card empty-state">
+        <p>Chưa có chủ đề nào. Hãy tạo chủ đề đầu tiên ở trên.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên chủ đề</th>
+              <th>Khối lớp</th>
+              <th>Số câu hỏi</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% topics.forEach(function(topic) { %>
+              <tr>
+                <td>
+                  <%= topic.ten_chu_de %>
+                  <details class="inline-edit">
+                    <summary>Sửa</summary>
+                    <form action="/teacher/topics/<%= topic.id %>?_method=PUT" method="POST" class="form inline-edit-form">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <div class="form-group">
+                        <label for="tenChuDe-<%= topic.id %>">Tên chủ đề</label>
+                        <input type="text" id="tenChuDe-<%= topic.id %>" name="tenChuDe" value="<%= topic.ten_chu_de %>" required maxlength="150">
+                      </div>
+                      <div class="form-group">
+                        <label for="khoiLop-<%= topic.id %>">Khối lớp</label>
+                        <select id="khoiLop-<%= topic.id %>" name="khoiLop">
+                          <option value="">-- Không xác định --</option>
+                          <% for (let k = 1; k <= 12; k += 1) { %>
+                            <option value="<%= k %>" <%= Number(topic.khoi_lop) === k ? 'selected' : '' %>>Lớp <%= k %></option>
+                          <% } %>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="moTa-<%= topic.id %>">Mô tả</label>
+                        <textarea id="moTa-<%= topic.id %>" name="moTa" rows="2"><%= topic.mo_ta || '' %></textarea>
+                      </div>
+                      <button type="submit" class="btn btn-primary btn-sm">Lưu thay đổi</button>
+                    </form>
+                  </details>
+                </td>
+                <td><%= topic.khoi_lop || '—' %></td>
+                <td><%= topic.so_cau_hoi %></td>
+                <td class="table-actions">
+                  <form action="/teacher/topics/<%= topic.id %>?_method=DELETE" method="POST" class="inline-form" data-confirm="Xóa chủ đề này? Hành động không thể hoàn tác.">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

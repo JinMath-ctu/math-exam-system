@@ -1,0 +1,34 @@
+sequenceDiagram
+    actor HS as Học sinh
+    participant Browser as Trình duyệt
+    participant JS as exam-room.js
+    participant LS as localStorage
+    participant Ctrl as attempt-controller
+    participant Svc as attempt-service
+    participant DB as MySQL
+
+    HS->>Browser: F5 / mở lại phòng thi
+    Browser->>JS: Load /student/attempts/:attemptId
+    JS->>Ctrl: GET /api/attempts/:attemptId/state
+    Ctrl->>Svc: getState(attemptId, hocSinhId)
+    Svc->>DB: Đọc luot_lam_bai + cau_hoi_luot_lam + chi_tiet_bai_lam + dap_an
+    Note over Svc,DB: Không tạo lượt mới, không trộn lại câu<br/>Không trả la_dap_an_dung
+    Svc-->>Ctrl: state JSON
+    Ctrl-->>JS: 200 state
+    JS->>JS: Render câu + đáp án từ server
+    JS->>LS: Đọc pending
+    alt Lượt không còn DANG_LAM
+        JS->>LS: discard local
+    else Có pending version mới hơn server
+        JS->>Ctrl: PUT .../answers/:questionId (từng câu)
+        Ctrl->>Svc: saveAnswer (SD-04)
+        Svc-->>JS: OK / OLD_ANSWER_VERSION
+        JS->>LS: cập nhật synced
+    else Không pending
+        JS-->>HS: Trạng thái Đã lưu
+    end
+    Note over Browser,JS: window online → resyncPendingAnswers()
+    loop ~30 giây khi DANG_LAM
+        JS->>Ctrl: POST /api/attempts/:attemptId/heartbeat
+        Ctrl->>Svc: Cập nhật last_seen_at
+    end

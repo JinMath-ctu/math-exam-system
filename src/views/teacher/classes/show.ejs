@@ -1,0 +1,99 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <p><a href="/teacher/classes">&larr; Danh sách lớp học</a></p>
+      <div class="card-header-row">
+        <h1><%= cls.ten_lop %></h1>
+        <% if (cls.trang_thai === 'HOAT_DONG') { %>
+          <span class="badge badge-success">Hoạt động</span>
+        <% } else { %>
+          <span class="badge badge-archived">Lưu trữ</span>
+        <% } %>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Mã lớp</span>
+          <span class="detail-value">
+            <span class="class-code"><%= cls.ma_lop %></span>
+            <button type="button" class="btn btn-ghost btn-sm" data-copy="<%= cls.ma_lop %>" aria-label="Sao chép mã lớp">Sao chép</button>
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Số học sinh</span>
+          <span class="detail-value"><%= members.length %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Ngày tạo</span>
+          <span class="detail-value"><%= new Date(cls.created_at).toLocaleDateString('vi-VN') %></span>
+        </div>
+      </div>
+
+      <% if (cls.mo_ta) { %>
+        <p><%= cls.mo_ta %></p>
+      <% } %>
+
+      <div class="card-actions">
+        <a href="/teacher/classes/<%= cls.id %>/edit" class="btn btn-secondary">Sửa thông tin</a>
+        <% if (cls.trang_thai === 'HOAT_DONG') { %>
+          <form action="/teacher/classes/<%= cls.id %>/archive?_method=PATCH" method="POST" class="inline-form" data-confirm="Lưu trữ lớp này? Học sinh sẽ không thể tham gia thêm bằng mã lớp.">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-secondary">Lưu trữ lớp</button>
+          </form>
+        <% } %>
+        <% if (canDelete) { %>
+          <form action="/teacher/classes/<%= cls.id %>/delete" method="POST" class="inline-form" data-confirm="Xóa vĩnh viễn lớp này? Thành viên và phân công đề (chưa thi) cũng bị gỡ. Không thể hoàn tác.">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-danger">Xóa lớp</button>
+          </form>
+        <% } else { %>
+          <p class="field-hint">Lớp đã có <%= Number(attemptCount) %> lượt làm bài nên không xóa cứng được — giữ để tra cứu điểm<% if (cls.trang_thai === 'HOAT_DONG') { %>; có thể Lưu trữ để ngừng nhận học sinh mới<% } %>.</p>
+        <% } %>
+      </div>
+    </div>
+
+    <h2 class="section-title">Thành viên lớp học</h2>
+
+    <% if (members.length === 0) { %>
+      <div class="card empty-state">
+        <p>Chưa có học sinh nào tham gia lớp này. Chia sẻ mã lớp <strong class="class-code"><%= cls.ma_lop %></strong> để học sinh tham gia.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Họ tên</th>
+              <th>Email</th>
+              <th>Ngày tham gia</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% members.forEach(function(member) { %>
+              <tr>
+                <td><%= member.ho_ten %></td>
+                <td><%= member.email %></td>
+                <td><%= new Date(member.ngay_tham_gia).toLocaleDateString('vi-VN') %></td>
+                <td class="table-actions">
+                  <form action="/teacher/classes/<%= cls.id %>/members/<%= member.hoc_sinh_id %>/remove?_method=PATCH" method="POST" class="inline-form" data-confirm="Đưa học sinh <%= member.ho_ten %> ra khỏi lớp?">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-danger btn-sm">Đưa ra khỏi lớp</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

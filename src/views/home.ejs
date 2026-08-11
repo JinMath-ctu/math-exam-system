@@ -1,0 +1,66 @@
+<%- include('partials/header', { bodyClass: 'is-home' }) %>
+<main id="main-content" class="page-home">
+  <div class="home-decor" aria-hidden="true">
+    <span class="hd1">π</span>
+    <span class="hd2">∑</span>
+    <span class="hd3">√</span>
+    <span class="hd4">Δ</span>
+  </div>
+
+  <header class="home-topbar">
+    <div class="container home-topbar-inner">
+      <a href="/" class="home-brand" aria-label="JinMath">
+        <img src="/images/jinmath-logo.png" alt="JinMath" width="140" height="40">
+      </a>
+      <nav class="home-top-actions" aria-label="Tài khoản">
+        <a href="/auth/login" class="btn btn-ghost btn-sm">Đăng nhập</a>
+        <a href="/auth/register" class="btn btn-primary btn-sm">Đăng ký</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="home-hero">
+    <div class="container home-hero-inner">
+      <div class="home-hero-copy">
+        <p class="home-kicker">Nền tảng kiểm tra Toán</p>
+        <h1>Đánh giá thông minh.<br>Học tập hiệu quả.</h1>
+        <p class="home-lead">
+          JinMath kết nối việc tạo đề, làm bài và chấm điểm trong một quy trình
+          trực tuyến thống nhất, rõ ràng và thuận tiện.
+        </p>
+        <div class="home-actions">
+          <a href="/auth/login" class="btn btn-primary btn-lg">Đăng nhập</a>
+          <a href="/auth/register" class="btn btn-secondary btn-lg">Tạo tài khoản</a>
+        </div>
+        <p class="home-hint">
+          Quên mật khẩu? <a href="/auth/forgot-password">Khôi phục tại đây</a>
+        </p>
+      </div>
+
+      <div class="home-hero-panel" aria-label="Điểm nổi bật">
+        <div class="home-feature">
+          <span class="home-feature-icon" aria-hidden="true">1</span>
+          <div>
+            <strong>Đa dạng dạng câu hỏi</strong>
+            <p>Hỗ trợ tạo đề trắc nghiệm, đúng/sai, trả lời ngắn và tự luận.</p>
+          </div>
+        </div>
+        <div class="home-feature">
+          <span class="home-feature-icon" aria-hidden="true">2</span>
+          <div>
+            <strong>Tự động lưu và bảo vệ tiến độ</strong>
+            <p>Tự động lưu đáp án và khôi phục bài làm khi có gián đoạn.</p>
+          </div>
+        </div>
+        <div class="home-feature">
+          <span class="home-feature-icon" aria-hidden="true">3</span>
+          <div>
+            <strong>Đánh giá chính xác, kết quả rõ ràng</strong>
+            <p>Kết hợp tốc độ tự động với sự linh hoạt khi chấm tự luận.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<%- include('partials/footer') %>

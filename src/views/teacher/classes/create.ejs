@@ -1,0 +1,54 @@
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container auth-container">
+    <div class="card">
+      <h1>Tạo lớp học</h1>
+      <p class="auth-subtitle">Nhập thông tin lớp học mới.</p>
+
+      <%- include('../../partials/flash') %>
+
+      <form action="/teacher/classes/create" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="tenLop">Tên lớp</label>
+          <input
+            type="text"
+            id="tenLop"
+            name="tenLop"
+            value="<%= formData.tenLop || '' %>"
+            required
+            maxlength="150"
+            placeholder="Toán 10A1"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="maLop">Mã lớp</label>
+          <input
+            type="text"
+            id="maLop"
+            name="maLop"
+            value="<%= formData.maLop || '' %>"
+            maxlength="20"
+            placeholder="Để trống để hệ thống tự tạo"
+          >
+          <span class="field-hint">4-20 ký tự, chỉ gồm chữ và số. Bỏ trống để hệ thống tự sinh mã.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="moTa">Mô tả</label>
+          <textarea id="moTa" name="moTa" rows="3" placeholder="Mô tả ngắn về lớp học (không bắt buộc)"><%= formData.moTa || '' %></textarea>
+        </div>
+
+        <div class="card-actions">
+          <button type="submit" class="btn btn-primary">Tạo lớp</button>
+          <a href="/teacher/classes" class="btn btn-secondary">Hủy</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>

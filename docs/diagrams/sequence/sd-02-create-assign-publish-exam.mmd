@@ -1,0 +1,46 @@
+sequenceDiagram
+    actor GV as Giáo viên
+    participant Browser as Trình duyệt
+    participant Ctrl as teacher-exam-controller
+    participant Svc as exam-service
+    participant DB as MySQL
+
+    Note over GV,DB: Bước 1 — Tạo đề nháp
+    GV->>Browser: Form tạo đề (+ tùy chọn chọn câu)
+    Browser->>Ctrl: POST /teacher/exams/create (examMetaRules)
+    Ctrl->>Svc: createExam(giaoVienId, body)
+    Svc->>DB: INSERT de_thi (trang_thai=NHAP, tong_diem=0)
+    opt Có cauHoiIds / diemCauHoi_*
+        Svc->>DB: INSERT cau_hoi_de_thi
+        Svc->>DB: UPDATE de_thi.tong_diem
+    end
+    Svc-->>Ctrl: examId
+    Ctrl-->>Browser: 302 /teacher/exams/:id
+
+    Note over GV,DB: Bước 2 — Giao đề cho lớp
+    GV->>Browser: Chọn lớp
+    Browser->>Ctrl: POST /teacher/exams/:id/assign
+    Ctrl->>Svc: assignClass(examId, giaoVienId, lopHocId)
+    Svc->>DB: Kiểm tra de_thi + lop_hoc thuộc GV
+    alt Đề DA_HUY
+        Svc-->>Ctrl: EXAM_NOT_EDITABLE (422)
+    else Đã giao trước đó
+        Svc-->>Ctrl: CONFLICT (409)
+    else OK
+        Svc->>DB: INSERT phan_cong_de
+        Ctrl-->>Browser: Flash Đã giao đề
+    end
+
+    Note over GV,DB: Bước 3 — Công bố đề
+    GV->>Browser: Bấm Công bố đề
+    Browser->>Ctrl: POST /teacher/exams/:id/publish
+    Ctrl->>Svc: publishExam(examId, giaoVienId)
+    Svc->>DB: Kiểm tra NHAP, có câu, có lớp giao, tong_diem, thời gian
+    alt Thiếu điều kiện
+        Svc-->>Ctrl: VALIDATION_ERROR / EXAM_NOT_EDITABLE
+        Ctrl-->>Browser: Flash lỗi
+    else OK
+        Svc->>DB: UPDATE de_thi SET trang_thai=DA_CONG_BO
+        Note over Svc,DB: Khóa sửa cấu trúc đề
+        Ctrl-->>Browser: Flash đã công bố
+    end

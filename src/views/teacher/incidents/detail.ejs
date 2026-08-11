@@ -1,0 +1,111 @@
+<%
+const statusLabels = { CHO_XAC_NHAN: 'Chờ xác nhận', DA_CHAP_NHAN: 'Đã chấp nhận', TU_CHOI: 'Từ chối' };
+const statusBadge = { CHO_XAC_NHAN: 'badge-info', DA_CHAP_NHAN: 'badge-success', TU_CHOI: 'badge-danger' };
+const typeLabels = { MAT_DIEN: 'Mất điện', MAT_MANG: 'Mất mạng', LOI_TRINH_DUYET: 'Lỗi trình duyệt', LOI_HE_THONG: 'Lỗi hệ thống', KHAC: 'Khác' };
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <p><a href="/teacher/incidents">&larr; Sự cố bài thi</a></p>
+
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <div class="card-header-row">
+        <h1>Chi tiết sự cố</h1>
+        <span class="badge <%= statusBadge[incident.trang_thai] %>"><%= statusLabels[incident.trang_thai] %></span>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Học sinh</span>
+          <span class="detail-value"><%= incident.hoc_sinh_ho_ten %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Lớp</span>
+          <span class="detail-value"><%= incident.ten_lop %> (<%= incident.ma_lop %>)</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Đề thi</span>
+          <span class="detail-value"><%= incident.ten_de %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Lần làm</span>
+          <span class="detail-value"><%= incident.lan_thu %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Loại sự cố</span>
+          <span class="detail-value"><%= typeLabels[incident.loai_su_co] || incident.loai_su_co %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Trạng thái lượt làm</span>
+          <span class="detail-value"><%= incident.attempt_trang_thai %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Bắt đầu sự cố</span>
+          <span class="detail-value"><%= incident.bat_dau_luc ? formatDateTimeVN(incident.bat_dau_luc) : '—' %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Kết thúc sự cố</span>
+          <span class="detail-value"><%= incident.ket_thuc_luc ? formatDateTimeVN(incident.ket_thuc_luc) : '—' %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Đã bù giờ trước đó</span>
+          <span class="detail-value"><%= incident.thoi_gian_bo_sung_giay %> giây</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Báo cáo lúc</span>
+          <span class="detail-value"><%= formatDateTimeVN(incident.created_at) %></span>
+        </div>
+      </div>
+
+      <% if (incident.mo_ta) { %>
+        <p><strong>Mô tả của học sinh:</strong> <%= incident.mo_ta %></p>
+      <% } %>
+
+      <% if (incident.trang_thai !== 'CHO_XAC_NHAN') { %>
+        <p class="field-hint">
+          Đã xử lý: <%= statusLabels[incident.trang_thai] %><% if (incident.trang_thai === 'DA_CHAP_NHAN') { %> — bù <%= incident.so_giay_bu_gio %> giây<% } %>.
+          <% if (incident.ly_do_xu_ly) { %>Lý do: <%= incident.ly_do_xu_ly %><% } %>
+        </p>
+      <% } %>
+    </div>
+
+    <% if (incident.trang_thai === 'CHO_XAC_NHAN') { %>
+      <div class="review-grid">
+        <div class="card">
+          <h3>Duyệt sự cố &amp; bù giờ</h3>
+          <form action="/teacher/incidents/<%= incident.id %>/approve" method="POST" class="form" data-confirm="Duyệt sự cố này và cộng giờ cho học sinh?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="form-group">
+              <label for="soGiayBuGio">Số giây bù giờ</label>
+              <input type="number" id="soGiayBuGio" name="soGiayBuGio" min="1" max="7200" step="1" required>
+            </div>
+            <div class="form-group">
+              <label for="lyDoXuLyApprove">Lý do (tùy chọn)</label>
+              <input type="text" id="lyDoXuLyApprove" name="lyDoXuLy" maxlength="1000">
+            </div>
+            <button type="submit" class="btn btn-primary">Duyệt &amp; bù giờ</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Từ chối sự cố</h3>
+          <form action="/teacher/incidents/<%= incident.id %>/reject" method="POST" class="form" data-confirm="Từ chối sự cố này?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="form-group">
+              <label for="lyDoXuLyReject">Lý do từ chối</label>
+              <input type="text" id="lyDoXuLyReject" name="lyDoXuLy" maxlength="1000" required>
+            </div>
+            <button type="submit" class="btn btn-danger">Từ chối</button>
+          </form>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>
