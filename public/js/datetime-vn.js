@@ -33,18 +33,26 @@
     return match[3] + '/' + match[2] + '/' + match[1] + ' ' + match[4] + ':' + match[5];
   }
 
+  function nowIsoLocal() {
+    const d = new Date();
+    return d.getFullYear()
+      + '-' + pad(d.getMonth() + 1)
+      + '-' + pad(d.getDate())
+      + 'T' + pad(d.getHours())
+      + ':' + pad(d.getMinutes());
+  }
+
   function bindField(wrap) {
     if (!wrap || wrap.dataset.bound === '1') return;
     wrap.dataset.bound = '1';
 
     const text = wrap.querySelector('.datetime-vn');
     const picker = wrap.querySelector('.datetime-vn-picker');
-    const trigger = wrap.querySelector('.datetime-vn-trigger');
     if (!text || !picker) return;
 
     function syncPickerFromText() {
       const iso = vnToIso(text.value);
-      if (iso) picker.value = iso;
+      picker.value = iso || nowIsoLocal();
     }
 
     function syncTextFromPicker() {
@@ -61,21 +69,17 @@
     picker.addEventListener('change', syncTextFromPicker);
     picker.addEventListener('input', syncTextFromPicker);
 
-    if (trigger) {
-      trigger.addEventListener('click', function () {
-        syncPickerFromText();
-        if (typeof picker.showPicker === 'function') {
-          try {
-            picker.showPicker();
-            return;
-          } catch (err) {
-            // Fallback: focus/click native control.
-          }
+    // Desktop: một số trình duyệt cần showPicker sau khi tap.
+    picker.addEventListener('click', function () {
+      syncPickerFromText();
+      if (typeof picker.showPicker === 'function') {
+        try {
+          picker.showPicker();
+        } catch (err) {
+          // Mobile/iOS: tap trực tiếp vào input đã đủ mở bánh xe ngày-tháng-năm.
         }
-        picker.focus();
-        picker.click();
-      });
-    }
+      }
+    });
   }
 
   document.querySelectorAll('.datetime-vn-wrap').forEach(bindField);

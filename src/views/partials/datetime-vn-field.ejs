@@ -19,12 +19,21 @@
     pattern="\d{2}/\d{2}/\d{4} \d{2}:\d{2}"
     title="<%= dtTitle %>"
   >
-  <button type="button" class="datetime-vn-trigger" aria-label="Mở lịch chọn ngày giờ" title="Chọn trên lịch">
+  <span class="datetime-vn-trigger" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
       <rect x="3" y="5" width="18" height="16" rx="2"></rect>
       <path d="M3 10h18"></path>
       <path d="M8 3v4M16 3v4"></path>
     </svg>
-  </button>
-  <input type="datetime-local" class="datetime-vn-picker" tabindex="-1" aria-hidden="true">
+  </span>
+  <!--
+    datetime-local phủ lên nút lịch (opacity 0, vẫn nhận touch).
+    Cách này mở được bánh xe ngày/tháng/năm trên iOS/Android; showPicker() thường không ổn trên mobile.
+  -->
+  <input
+    type="datetime-local"
+    class="datetime-vn-picker"
+    tabindex="-1"
+    aria-label="Chọn ngày giờ trên lịch"
+  >
 </div>

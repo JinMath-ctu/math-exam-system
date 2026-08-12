@@ -398,12 +398,8 @@
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.datetime-vn-trigger:hover {
-  color: var(--color-primary);
-  background: var(--color-accent-soft);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .datetime-vn-trigger svg {
@@ -415,15 +411,21 @@
 .form-group .datetime-vn-picker,
 .datetime-vn-picker {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  pointer-events: none;
-  border: 0;
-  padding: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2.75rem;
+  height: auto;
   margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  pointer-events: auto;
   background: transparent;
+  /* iOS: tránh zoom khi focus control */
+  font-size: 16px;
 }
 
 .checkbox-label {
