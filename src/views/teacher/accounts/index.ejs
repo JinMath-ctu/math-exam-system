@@ -68,9 +68,9 @@ const statusBadge = { HOAT_DONG: 'badge-success', TAM_KHOA: 'badge-archived' };
             </tr>
           </thead>
           <tbody>
-            <% students.forEach(function(student) { %>
+            <% students.forEach(function(student, index) { %>
               <tr>
-                <td><%= student.id %></td>
+                <td><%= index + 1 %></td>
                 <td><%= student.ho_ten %></td>
                 <td><%= student.email %></td>
                 <td>
@@ -85,7 +85,7 @@ const statusBadge = { HOAT_DONG: 'badge-success', TAM_KHOA: 'badge-archived' };
           </tbody>
         </table>
       </div>
-      <p class="field-hint">Hiển thị tối đa 500 tài khoản mới nhất theo bộ lọc hiện tại.</p>
+      <p class="field-hint">Sắp xếp theo thời gian đăng ký (cũ → mới). Hiển thị tối đa 500 tài khoản theo bộ lọc hiện tại.</p>
     <% } %>
   </div>
 </main>

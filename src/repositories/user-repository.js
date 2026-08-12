@@ -71,7 +71,7 @@ async function listStudents({ trangThai, q, limit = 500 } = {}) {
           WHERE tvl.hoc_sinh_id = nd.id AND tvl.trang_thai = 'DANG_HOC') AS so_lop_dang_hoc
      FROM nguoi_dung nd
      WHERE ${conditions.join(' AND ')}
-     ORDER BY nd.created_at DESC, nd.id DESC
+     ORDER BY nd.created_at ASC, nd.id ASC
      LIMIT ${safeLimit}`,
     params,
   );
