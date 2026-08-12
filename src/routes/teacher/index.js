@@ -5,6 +5,7 @@ const { requireTeacher } = require('../../middleware/auth');
 const asyncHandler = require('../../utils/async-handler');
 const teacherClassController = require('../../controllers/teacher-class-controller');
 const teacherTopicController = require('../../controllers/teacher-topic-controller');
+const teacherAccountController = require('../../controllers/teacher-account-controller');
 const { createClassRules, updateClassRules } = require('../../validators/class-validators');
 const { createTopicRules, updateTopicRules } = require('../../validators/topic-validators');
 const questionRoutes = require('./questions');
@@ -20,6 +21,9 @@ router.get('/dashboard', requireTeacher, (req, res) => {
     user: req.session.user,
   });
 });
+
+// Tài khoản học sinh (chỉ xem — giáo viên chủ hệ thống V1)
+router.get('/accounts', requireTeacher, asyncHandler(teacherAccountController.index));
 
 // Lớp học
 router.get('/classes', requireTeacher, asyncHandler(teacherClassController.index));

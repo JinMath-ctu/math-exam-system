@@ -6,6 +6,8 @@ Hệ thống V1 có hai actor: **Giáo viên chủ hệ thống** và **Học si
 
 **Sơ đồ Use Case UML (cho báo cáo):** `docs/use-case-diagrams.md` · xem `docs/use-case-diagrams-preview.html` · ảnh PNG/SVG trong `docs/diagrams/`.
 
+**Đặc tả Use Case (mục 2.3 báo cáo):** `docs/use-case-spec.md` — chi tiết 5 nhóm UC tiêu biểu + rút gọn các UC còn lại + NFR.
+
 | Mã sơ đồ | Nội dung |
 |----------|----------|
 | UCD-01 | Tổng quan hệ thống (UML) |
@@ -31,6 +33,7 @@ Hệ thống V1 có hai actor: **Giáo viên chủ hệ thống** và **Học si
 | UC-GV-12 | Công bố kết quả | Cho học sinh xem điểm |
 | UC-GV-13 | Xem thống kê | Số liệu và biểu đồ cơ bản |
 | UC-GV-14 | Xử lý sự cố | Duyệt/từ chối báo cáo, bù giờ |
+| UC-GV-15 | Xem tài khoản học sinh | Xem danh sách tài khoản HOC_SINH đã đăng ký (chỉ đọc) |
 
 ## Học sinh
 

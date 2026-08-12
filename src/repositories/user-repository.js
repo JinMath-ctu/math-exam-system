@@ -45,9 +45,44 @@ async function updatePasswordHash(userId, matKhauHash, executor = pool) {
   );
 }
 
+/**
+ * Danh sách tài khoản học sinh (không trả mat_khau_hash).
+ * Dùng cho giáo viên chủ hệ thống V1 — chỉ đọc.
+ */
+async function listStudents({ trangThai, q, limit = 500 } = {}) {
+  const conditions = ["nd.vai_tro = 'HOC_SINH'"];
+  const params = [];
+
+  if (trangThai) {
+    conditions.push('nd.trang_thai = ?');
+    params.push(trangThai);
+  }
+
+  if (q) {
+    conditions.push('(nd.ho_ten LIKE ? OR nd.email LIKE ?)');
+    params.push(`%${q}%`, `%${q}%`);
+  }
+
+  const safeLimit = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 1000) : 500;
+
+  const [rows] = await pool.execute(
+    `SELECT nd.id, nd.ho_ten, nd.email, nd.trang_thai, nd.created_at,
+       (SELECT COUNT(*) FROM thanh_vien_lop tvl
+          WHERE tvl.hoc_sinh_id = nd.id AND tvl.trang_thai = 'DANG_HOC') AS so_lop_dang_hoc
+     FROM nguoi_dung nd
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY nd.created_at DESC, nd.id DESC
+     LIMIT ${safeLimit}`,
+    params,
+  );
+
+  return rows;
+}
+
 module.exports = {
   findByEmail,
   findById,
   createUser,
   updatePasswordHash,
+  listStudents,
 };

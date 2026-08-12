@@ -1,0 +1,93 @@
+<%
+const statusLabels = { HOAT_DONG: 'Hoạt động', TAM_KHOA: 'Tạm khóa' };
+const statusBadge = { HOAT_DONG: 'badge-success', TAM_KHOA: 'badge-archived' };
+%>
+<%- include('../../partials/header') %>
+<%- include('../../partials/navbar-teacher') %>
+<main id="main-content" class="page-list">
+  <div class="container">
+    <%- include('../../partials/flash') %>
+
+    <header class="page-header">
+      <div>
+        <h1>Tài khoản học sinh</h1>
+        <p class="page-lead">
+          Danh sách tài khoản đã đăng ký trên hệ thống (chỉ xem — không sửa mật khẩu hay vai trò tại đây).
+        </p>
+      </div>
+      <div class="page-header-actions">
+        <span class="badge badge-info"><%= total %> tài khoản</span>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <form action="/teacher/accounts" method="GET" class="filter-form">
+        <div class="form-group">
+          <label for="q">Tìm kiếm</label>
+          <input
+            type="text"
+            id="q"
+            name="q"
+            value="<%= filters.q %>"
+            placeholder="Họ tên hoặc email"
+            maxlength="100"
+            autocomplete="off"
+          >
+        </div>
+        <div class="form-group">
+          <label for="trangThai">Trạng thái</label>
+          <select id="trangThai" name="trangThai">
+            <option value="" <%= filters.trangThai === '' ? 'selected' : '' %>>Tất cả</option>
+            <option value="HOAT_DONG" <%= filters.trangThai === 'HOAT_DONG' ? 'selected' : '' %>>Hoạt động</option>
+            <option value="TAM_KHOA" <%= filters.trangThai === 'TAM_KHOA' ? 'selected' : '' %>>Tạm khóa</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Lọc</button>
+        <% if (filters.q || filters.trangThai) { %>
+          <a href="/teacher/accounts" class="btn btn-secondary">Xóa lọc</a>
+        <% } %>
+      </form>
+    </div>
+
+    <% if (students.length === 0) { %>
+      <div class="card empty-state">
+        <p>Chưa có tài khoản học sinh nào phù hợp bộ lọc.</p>
+        <p class="field-hint">Học sinh tự đăng ký công khai; sau khi đăng ký sẽ xuất hiện tại đây.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Họ tên</th>
+              <th scope="col">Email</th>
+              <th scope="col">Trạng thái</th>
+              <th scope="col">Số lớp đang học</th>
+              <th scope="col">Ngày đăng ký</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% students.forEach(function(student) { %>
+              <tr>
+                <td><%= student.id %></td>
+                <td><%= student.ho_ten %></td>
+                <td><%= student.email %></td>
+                <td>
+                  <span class="badge <%= statusBadge[student.trang_thai] || 'badge-info' %>">
+                    <%= statusLabels[student.trang_thai] || student.trang_thai %>
+                  </span>
+                </td>
+                <td><%= Number(student.so_lop_dang_hoc) || 0 %></td>
+                <td><%= student.created_at ? formatDateTimeVN(student.created_at) : '—' %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      <p class="field-hint">Hiển thị tối đa 500 tài khoản mới nhất theo bộ lọc hiện tại.</p>
+    <% } %>
+  </div>
+</main>
+<%- include('../../partials/app-end') %>
+<%- include('../../partials/footer') %>
