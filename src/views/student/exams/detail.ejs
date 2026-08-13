@@ -20,6 +20,8 @@ const canStart = exam.trang_thai === 'DA_CONG_BO'
         <h1><%= exam.ten_de %></h1>
         <% if (exam.trang_thai === 'DA_HUY') { %>
           <span class="badge badge-archived">Đã hủy</span>
+        <% } else if (remainingAttempts <= 0 && !activeAttempt) { %>
+          <span class="badge badge-archived">Hết lượt làm</span>
         <% } else { %>
           <span class="badge <%= timeStatusBadge[trangThaiThoiGian] %>"><%= timeStatusLabels[trangThaiThoiGian] %></span>
         <% } %>

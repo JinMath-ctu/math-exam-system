@@ -716,10 +716,20 @@ async function listAssignedExams(hocSinhId) {
   const rows = await examRepository.listAssignedForStudent(hocSinhId);
   const now = Date.now();
 
-  return rows.map((row) => ({
-    ...row,
-    trang_thai_thoi_gian: computeTimeStatus(row.thoi_gian_bat_dau, row.thoi_gian_ket_thuc, now),
-  }));
+  return rows.map((row) => {
+    const soLanDaLam = Number(row.so_lan_da_lam) || 0;
+    const soLanDuocLam = Number(row.so_lan_duoc_lam) || 0;
+    const dangLam = row.dang_lam_id != null;
+    const hetLuot = !dangLam && soLanDaLam >= soLanDuocLam;
+
+    return {
+      ...row,
+      so_lan_da_lam: soLanDaLam,
+      so_lan_duoc_lam: soLanDuocLam,
+      trang_thai_thoi_gian: computeTimeStatus(row.thoi_gian_bat_dau, row.thoi_gian_ket_thuc, now),
+      het_luot: hetLuot,
+    };
+  });
 }
 
 // Chi tiết một đề đã giao cho học sinh: chỉ trả về nếu học sinh thuộc ít nhất

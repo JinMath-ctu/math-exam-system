@@ -4,6 +4,12 @@ const timeStatusBadge = { SAP_MO: 'badge-muted', DANG_MO: 'badge-success', DA_DO
 const attemptStatusLabels = {
   DANG_LAM: 'Đang làm', DA_NOP: 'Đã nộp', TU_DONG_NOP: 'Đã tự động nộp', DA_CHAM: 'Đã chấm',
 };
+const activeExams = exams.filter(function(row) {
+  return !row.het_luot && row.de_trang_thai !== 'DA_HUY';
+});
+const finishedExams = exams.filter(function(row) {
+  return row.het_luot || row.de_trang_thai === 'DA_HUY';
+});
 %>
 <%- include('../../partials/header') %>
 <%- include('../../partials/navbar-student') %>
@@ -13,7 +19,7 @@ const attemptStatusLabels = {
 
     <header class="page-header">
       <h1>Bài thi được giao</h1>
-      <p class="page-lead">Danh sách đề thi đã được giao cho các lớp bạn đang tham gia.</p>
+      <p class="page-lead">Chỉ hiện các đề bạn còn lượt làm hoặc đang làm dở. Đề đã hết lượt được chuyển xuống cuối trang.</p>
     </header>
 
     <% if (exams.length === 0) { %>
@@ -22,47 +28,94 @@ const attemptStatusLabels = {
         <a href="/student/classes/join" class="btn btn-primary">+ Tham gia lớp học</a>
       </div>
     <% } else { %>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Tên đề thi</th>
-              <th>Lớp</th>
-              <th>Thời gian mở đề</th>
-              <th>Trạng thái</th>
-              <th>Lượt làm</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% exams.forEach(function(row) { %>
+      <h2 class="section-title">Đề có thể làm</h2>
+      <% if (activeExams.length === 0) { %>
+        <div class="card empty-state">
+          <p>Hiện không còn đề nào bạn có thể bắt đầu làm mới.</p>
+        </div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td><%= row.ten_de %></td>
-                <td><%= row.ten_lop %></td>
-                <td>
-                  <%= formatDateTimeVN(row.thoi_gian_bat_dau) %> &rarr; <%= formatDateTimeVN(row.thoi_gian_ket_thuc) %>
-                </td>
-                <td>
-                  <% if (row.de_trang_thai === 'DA_HUY') { %>
-                    <span class="badge badge-archived">Đã hủy</span>
-                  <% } else { %>
-                    <span class="badge <%= timeStatusBadge[row.trang_thai_thoi_gian] %>"><%= timeStatusLabels[row.trang_thai_thoi_gian] %></span>
-                  <% } %>
-                  <% if (row.dang_lam_id) { %>
-                    <span class="badge badge-success">Đang làm dở</span>
-                  <% } else if (row.trang_thai_gan_nhat) { %>
-                    <span class="badge badge-muted"><%= attemptStatusLabels[row.trang_thai_gan_nhat] || row.trang_thai_gan_nhat %></span>
-                  <% } %>
-                </td>
-                <td><%= row.so_lan_da_lam %> / <%= row.so_lan_duoc_lam %></td>
-                <td>
-                  <a href="/student/exams/<%= row.de_thi_id %>" class="btn btn-secondary btn-sm">Xem chi tiết</a>
-                </td>
+                <th>Tên đề thi</th>
+                <th>Lớp</th>
+                <th>Thời gian mở đề</th>
+                <th>Trạng thái</th>
+                <th>Lượt làm</th>
+                <th>Thao tác</th>
               </tr>
-            <% }); %>
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              <% activeExams.forEach(function(row) { %>
+                <tr>
+                  <td><%= row.ten_de %></td>
+                  <td><%= row.ten_lop %></td>
+                  <td>
+                    <%= formatDateTimeVN(row.thoi_gian_bat_dau) %> &rarr; <%= formatDateTimeVN(row.thoi_gian_ket_thuc) %>
+                  </td>
+                  <td>
+                    <span class="badge <%= timeStatusBadge[row.trang_thai_thoi_gian] %>"><%= timeStatusLabels[row.trang_thai_thoi_gian] %></span>
+                    <% if (row.dang_lam_id) { %>
+                      <span class="badge badge-success">Đang làm dở</span>
+                    <% } else if (row.trang_thai_gan_nhat) { %>
+                      <span class="badge badge-muted"><%= attemptStatusLabels[row.trang_thai_gan_nhat] || row.trang_thai_gan_nhat %></span>
+                    <% } %>
+                  </td>
+                  <td><%= row.so_lan_da_lam %> / <%= row.so_lan_duoc_lam %></td>
+                  <td>
+                    <a href="/student/exams/<%= row.de_thi_id %>" class="btn btn-secondary btn-sm">Xem chi tiết</a>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+
+      <% if (finishedExams.length > 0) { %>
+        <h2 class="section-title">Đề đã hết lượt / đã hủy</h2>
+        <p class="field-hint">Các đề này không còn mở để làm mới. Sau khi giáo viên công bố kết quả, hãy xem ở mục Kết quả.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tên đề thi</th>
+                <th>Lớp</th>
+                <th>Thời gian mở đề</th>
+                <th>Trạng thái</th>
+                <th>Lượt làm</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% finishedExams.forEach(function(row) { %>
+                <tr>
+                  <td><%= row.ten_de %></td>
+                  <td><%= row.ten_lop %></td>
+                  <td>
+                    <%= formatDateTimeVN(row.thoi_gian_bat_dau) %> &rarr; <%= formatDateTimeVN(row.thoi_gian_ket_thuc) %>
+                  </td>
+                  <td>
+                    <% if (row.de_trang_thai === 'DA_HUY') { %>
+                      <span class="badge badge-archived">Đã hủy</span>
+                    <% } else { %>
+                      <span class="badge badge-archived">Hết lượt làm</span>
+                    <% } %>
+                    <% if (row.trang_thai_gan_nhat) { %>
+                      <span class="badge badge-muted"><%= attemptStatusLabels[row.trang_thai_gan_nhat] || row.trang_thai_gan_nhat %></span>
+                    <% } %>
+                  </td>
+                  <td><%= row.so_lan_da_lam %> / <%= row.so_lan_duoc_lam %></td>
+                  <td>
+                    <a href="/student/exams/<%= row.de_thi_id %>" class="btn btn-secondary btn-sm">Xem chi tiết</a>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
     <% } %>
   </div>
 </main>
