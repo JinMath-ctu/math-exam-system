@@ -271,6 +271,15 @@
     return false;
   }
 
+  function goToQuestion(index) {
+    if (index < 0 || index >= state.questions.length || index === state.currentIndex) {
+      return;
+    }
+    state.currentIndex = index;
+    renderQuestionPanel();
+    renderQuestionNav();
+  }
+
   function renderQuestionNav() {
     var nav = document.getElementById('question-nav');
     if (!nav) {
@@ -296,9 +305,7 @@
       }
 
       btn.addEventListener('click', function () {
-        state.currentIndex = index;
-        renderQuestionPanel();
-        renderQuestionNav();
+        goToQuestion(index);
       });
 
       nav.appendChild(btn);
@@ -385,6 +392,33 @@
     panel.appendChild(card);
 
     renderAnswerArea(question, answer, readOnly);
+
+    var stepper = document.createElement('div');
+    stepper.className = 'question-stepper';
+
+    var prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'btn btn-secondary question-stepper-btn';
+    prevBtn.textContent = '← Câu trước';
+    prevBtn.disabled = state.currentIndex <= 0;
+    prevBtn.addEventListener('click', function () {
+      goToQuestion(state.currentIndex - 1);
+    });
+
+    var nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'btn btn-primary question-stepper-btn';
+    nextBtn.textContent = state.currentIndex >= state.questions.length - 1
+      ? 'Hết câu hỏi'
+      : 'Câu sau →';
+    nextBtn.disabled = state.currentIndex >= state.questions.length - 1;
+    nextBtn.addEventListener('click', function () {
+      goToQuestion(state.currentIndex + 1);
+    });
+
+    stepper.appendChild(prevBtn);
+    stepper.appendChild(nextBtn);
+    card.appendChild(stepper);
 
     if (bookmarkBtn) {
       bookmarkBtn.addEventListener('click', function () {
