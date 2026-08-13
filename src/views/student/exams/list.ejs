@@ -1,9 +1,15 @@
 <%
 const timeStatusLabels = { SAP_MO: 'Chưa mở', DANG_MO: 'Đang mở', DA_DONG: 'Đã đóng' };
 const timeStatusBadge = { SAP_MO: 'badge-muted', DANG_MO: 'badge-success', DA_DONG: 'badge-archived' };
-const attemptStatusLabels = {
-  DANG_LAM: 'Đang làm', DA_NOP: 'Đã nộp', TU_DONG_NOP: 'Đã tự động nộp', DA_CHAM: 'Đã chấm',
-};
+function studentAttemptLabel(status, daCongBoKetQua) {
+  if (status === 'DA_CHAM') {
+    return daCongBoKetQua ? 'Đã chấm' : 'Đang chấm';
+  }
+  if (status === 'DA_NOP') return 'Đã nộp';
+  if (status === 'TU_DONG_NOP') return 'Đã tự động nộp';
+  if (status === 'DANG_LAM') return 'Đang làm';
+  return status || '';
+}
 const activeExams = exams.filter(function(row) {
   return !row.het_luot && row.de_trang_thai !== 'DA_HUY';
 });
@@ -59,7 +65,7 @@ const finishedExams = exams.filter(function(row) {
                     <% if (row.dang_lam_id) { %>
                       <span class="badge badge-success">Đang làm dở</span>
                     <% } else if (row.trang_thai_gan_nhat) { %>
-                      <span class="badge badge-muted"><%= attemptStatusLabels[row.trang_thai_gan_nhat] || row.trang_thai_gan_nhat %></span>
+                      <span class="badge badge-muted"><%= studentAttemptLabel(row.trang_thai_gan_nhat, row.da_cong_bo_ket_qua) %></span>
                     <% } %>
                   </td>
                   <td><%= row.so_lan_da_lam %> / <%= row.so_lan_duoc_lam %></td>
@@ -74,47 +80,49 @@ const finishedExams = exams.filter(function(row) {
       <% } %>
 
       <% if (finishedExams.length > 0) { %>
-        <h2 class="section-title">Đề đã hết lượt / đã hủy</h2>
-        <p class="field-hint">Các đề này không còn mở để làm mới. Sau khi giáo viên công bố kết quả, hãy xem ở mục Kết quả.</p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Tên đề thi</th>
-                <th>Lớp</th>
-                <th>Thời gian mở đề</th>
-                <th>Trạng thái</th>
-                <th>Lượt làm</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% finishedExams.forEach(function(row) { %>
+        <section class="exam-list-section exam-list-section-finished">
+          <h2 class="section-title">Đề đã hết lượt / đã hủy</h2>
+          <p class="field-hint exam-list-section-hint">Các đề này không còn mở để làm mới. Sau khi giáo viên công bố kết quả, hãy xem ở mục Kết quả.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
                 <tr>
-                  <td><%= row.ten_de %></td>
-                  <td><%= row.ten_lop %></td>
-                  <td>
-                    <%= formatDateTimeVN(row.thoi_gian_bat_dau) %> &rarr; <%= formatDateTimeVN(row.thoi_gian_ket_thuc) %>
-                  </td>
-                  <td>
-                    <% if (row.de_trang_thai === 'DA_HUY') { %>
-                      <span class="badge badge-archived">Đã hủy</span>
-                    <% } else { %>
-                      <span class="badge badge-archived">Hết lượt làm</span>
-                    <% } %>
-                    <% if (row.trang_thai_gan_nhat) { %>
-                      <span class="badge badge-muted"><%= attemptStatusLabels[row.trang_thai_gan_nhat] || row.trang_thai_gan_nhat %></span>
-                    <% } %>
-                  </td>
-                  <td><%= row.so_lan_da_lam %> / <%= row.so_lan_duoc_lam %></td>
-                  <td>
-                    <a href="/student/exams/<%= row.de_thi_id %>" class="btn btn-secondary btn-sm">Xem chi tiết</a>
-                  </td>
+                  <th>Tên đề thi</th>
+                  <th>Lớp</th>
+                  <th>Thời gian mở đề</th>
+                  <th>Trạng thái</th>
+                  <th>Lượt làm</th>
+                  <th>Thao tác</th>
                 </tr>
-              <% }); %>
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                <% finishedExams.forEach(function(row) { %>
+                  <tr>
+                    <td><%= row.ten_de %></td>
+                    <td><%= row.ten_lop %></td>
+                    <td>
+                      <%= formatDateTimeVN(row.thoi_gian_bat_dau) %> &rarr; <%= formatDateTimeVN(row.thoi_gian_ket_thuc) %>
+                    </td>
+                    <td>
+                      <% if (row.de_trang_thai === 'DA_HUY') { %>
+                        <span class="badge badge-archived">Đã hủy</span>
+                      <% } else { %>
+                        <span class="badge badge-archived">Hết lượt làm</span>
+                      <% } %>
+                      <% if (row.trang_thai_gan_nhat) { %>
+                        <span class="badge badge-muted"><%= studentAttemptLabel(row.trang_thai_gan_nhat, row.da_cong_bo_ket_qua) %></span>
+                      <% } %>
+                    </td>
+                    <td><%= row.so_lan_da_lam %> / <%= row.so_lan_duoc_lam %></td>
+                    <td>
+                      <a href="/student/exams/<%= row.de_thi_id %>" class="btn btn-secondary btn-sm">Xem chi tiết</a>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
       <% } %>
     <% } %>
   </div>

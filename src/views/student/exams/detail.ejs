@@ -1,9 +1,15 @@
 <%
 const timeStatusLabels = { SAP_MO: 'Chưa mở', DANG_MO: 'Đang mở', DA_DONG: 'Đã đóng' };
 const timeStatusBadge = { SAP_MO: 'badge-muted', DANG_MO: 'badge-success', DA_DONG: 'badge-archived' };
-const attemptStatusLabels = {
-  DANG_LAM: 'Đang làm', DA_NOP: 'Đã nộp', TU_DONG_NOP: 'Đã tự động nộp', DA_CHAM: 'Đã chấm',
-};
+function studentAttemptLabel(status, daCongBoKetQua) {
+  if (status === 'DA_CHAM') {
+    return daCongBoKetQua ? 'Đã chấm' : 'Đang chấm';
+  }
+  if (status === 'DA_NOP') return 'Đã nộp';
+  if (status === 'TU_DONG_NOP') return 'Đã tự động nộp';
+  if (status === 'DANG_LAM') return 'Đang làm';
+  return status || '';
+}
 const canStart = exam.trang_thai === 'DA_CONG_BO'
   && trangThaiThoiGian === 'DANG_MO'
   && remainingAttempts > 0
@@ -127,7 +133,7 @@ const canStart = exam.trang_thai === 'DA_CONG_BO'
                   <% if (attempt.trang_thai === 'DANG_LAM') { %>
                     <a href="/student/attempts/<%= attempt.id %>" class="badge badge-success">Đang làm</a>
                   <% } else { %>
-                    <span class="badge badge-muted"><%= attemptStatusLabels[attempt.trang_thai] || attempt.trang_thai %></span>
+                    <span class="badge badge-muted"><%= studentAttemptLabel(attempt.trang_thai, exam.da_cong_bo_ket_qua) %></span>
                   <% } %>
                 </td>
                 <td>
