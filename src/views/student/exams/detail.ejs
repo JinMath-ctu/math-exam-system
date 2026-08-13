@@ -107,10 +107,16 @@ const canStart = exam.trang_thai === 'DA_CONG_BO'
               <th>Nộp lúc</th>
               <th>Trạng thái</th>
               <th>Điểm</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            <% attempts.forEach(function(attempt) { %>
+            <% attempts.forEach(function(attempt) {
+              const canReview = Boolean(exam.da_cong_bo_ket_qua)
+                && attempt.trang_thai === 'DA_CHAM'
+                && attempt.thoi_gian_nop
+                && !activeAttempt;
+            %>
               <tr>
                 <td><%= attempt.lan_thu %></td>
                 <td><%= formatDateTimeVN(attempt.thoi_gian_bat_dau) %></td>
@@ -127,6 +133,17 @@ const canStart = exam.trang_thai === 'DA_CONG_BO'
                     <%= Number(attempt.tong_diem).toFixed(2) %>
                   <% } else { %>
                     <span class="field-hint">Chờ GV công bố</span>
+                  <% } %>
+                </td>
+                <td class="table-actions">
+                  <% if (canReview) { %>
+                    <a href="/student/results/<%= attempt.id %>" class="btn btn-secondary btn-sm">Xem lại bài làm</a>
+                  <% } else if (attempt.trang_thai === 'DANG_LAM') { %>
+                    <a href="/student/attempts/<%= attempt.id %>" class="btn btn-primary btn-sm">Tiếp tục</a>
+                  <% } else if (!exam.da_cong_bo_ket_qua && attempt.trang_thai !== 'DANG_LAM') { %>
+                    <span class="field-hint">Chờ công bố kết quả</span>
+                  <% } else { %>
+                    —
                   <% } %>
                 </td>
               </tr>

@@ -61,13 +61,14 @@ async function getResultDetail(attemptId, hocSinhId) {
 
   assertOfficialResultVisible(attempt);
   const choXemDapAn = Boolean(attempt.cho_xem_dap_an);
+  // Luôn tải bài làm của học sinh sau công bố; đáp án đúng / lời giải chỉ khi GV cho phép.
   const rows = await attemptRepository.listResultQuestions(attemptId, {
     includeAnswerKey: choXemDapAn,
   });
 
-  const choiceQuestionIds = choXemDapAn
-    ? rows.filter((row) => CHOICE_TYPES.has(row.loai_cau_hoi)).map((row) => row.cau_hoi_id)
-    : [];
+  const choiceQuestionIds = rows
+    .filter((row) => CHOICE_TYPES.has(row.loai_cau_hoi))
+    .map((row) => row.cau_hoi_id);
 
   const options = await answerRepository.findByQuestionIds(choiceQuestionIds);
   const optionsByQuestion = groupOptionsByQuestion(options);
@@ -82,29 +83,44 @@ async function getResultDetail(attemptId, hocSinhId) {
       diemToiDa: Number(row.diem_toi_da),
       diemDatDuoc: row.diem_dat_duoc == null ? 0 : Number(row.diem_dat_duoc),
       laDung: row.la_dung == null ? null : Boolean(row.la_dung),
+      nhanXet: row.nhan_xet || null,
     };
 
-    if (!choXemDapAn) {
-      return base;
-    }
-
-    base.loiGiai = row.loi_giai || null;
-    base.nhanXet = row.nhan_xet || null;
-
     if (row.loai_cau_hoi === 'MOT_DAP_AN') {
-      const opts = optionsByQuestion.get(String(row.cau_hoi_id)) || [];
+      const rawOpts = optionsByQuestion.get(String(row.cau_hoi_id)) || [];
+      const opts = rawOpts.map((opt) => ({
+        id: opt.id,
+        cau_hoi_id: opt.cau_hoi_id,
+        noi_dung: opt.noi_dung,
+        noi_dung_latex: opt.noi_dung_latex,
+        thu_tu: opt.thu_tu,
+        la_dap_an_dung: choXemDapAn ? Boolean(opt.la_dap_an_dung) : false,
+      }));
       base.tuyChon = opts;
       base.dapAnDaChon = opts.find((o) => Number(o.id) === Number(row.dap_an_da_chon_id)) || null;
-      base.dapAnDung = opts.find((o) => Boolean(o.la_dap_an_dung)) || null;
+      base.dapAnDung = choXemDapAn
+        ? (rawOpts.find((o) => Boolean(o.la_dap_an_dung)) || null)
+        : null;
     } else if (row.loai_cau_hoi === 'DUNG_SAI') {
-      const opts = optionsByQuestion.get(String(row.cau_hoi_id)) || [];
-      base.tuyChon = opts;
+      const rawOpts = optionsByQuestion.get(String(row.cau_hoi_id)) || [];
+      base.tuyChon = rawOpts.map((opt) => ({
+        id: opt.id,
+        cau_hoi_id: opt.cau_hoi_id,
+        noi_dung: opt.noi_dung,
+        noi_dung_latex: opt.noi_dung_latex,
+        thu_tu: opt.thu_tu,
+        la_dap_an_dung: choXemDapAn ? Boolean(opt.la_dap_an_dung) : false,
+      }));
       base.statementSelections = parseStatementSelections(row.noi_dung_tra_loi);
     } else if (row.loai_cau_hoi === 'TRA_LOI_NGAN') {
       base.noiDungTraLoi = row.noi_dung_tra_loi || null;
-      base.dapAnNganChuan = row.dap_an_ngan_chuan || null;
+      base.dapAnNganChuan = choXemDapAn ? (row.dap_an_ngan_chuan || null) : null;
     } else {
       base.noiDungTraLoi = row.noi_dung_tra_loi || null;
+    }
+
+    if (choXemDapAn) {
+      base.loiGiai = row.loi_giai || null;
     }
 
     return base;

@@ -38,7 +38,7 @@ const typeLabels = { MOT_DAP_AN: 'Một đáp án', DUNG_SAI: 'Đúng/Sai', TRA_
       </div>
     </div>
     <% if (!choXemDapAn) { %>
-      <p class="field-hint">Giáo viên chưa cho phép xem đáp án chi tiết của đề này — chỉ hiển thị điểm từng câu.</p>
+      <p class="field-hint">Bạn đang xem lại bài làm của mình. Giáo viên chưa cho phép xem đáp án đúng và lời giải.</p>
     <% } %>
 
     <h2 class="section-title">Chi tiết từng câu</h2>
@@ -52,56 +52,61 @@ const typeLabels = { MOT_DAP_AN: 'Một đáp án', DUNG_SAI: 'Đúng/Sai', TRA_
 
         <div class="katex-content question-content"><%= q.noiDung %></div>
 
-        <% if (choXemDapAn) { %>
-          <% if (q.loaiCauHoi === 'MOT_DAP_AN') { %>
-            <ul class="answer-view-list">
-              <% (q.tuyChon || []).forEach(function(opt, index) { %>
-                <li class="<%= opt.la_dap_an_dung ? 'is-correct' : '' %> <%= q.dapAnDaChon && q.dapAnDaChon.id === opt.id ? 'is-selected' : '' %>">
-                  <span class="katex-content"><strong><%= String.fromCharCode(65 + index) %>.</strong> <%= opt.noi_dung %></span>
-                  <span>
-                    <% if (opt.la_dap_an_dung) { %><span class="badge badge-success">Đáp án đúng</span><% } %>
-                    <% if (q.dapAnDaChon && q.dapAnDaChon.id === opt.id) { %><span class="badge badge-info">Bạn đã chọn</span><% } %>
-                  </span>
-                </li>
-              <% }); %>
-            </ul>
-          <% } else if (q.loaiCauHoi === 'DUNG_SAI') { %>
-            <ul class="answer-view-list">
-              <% (q.tuyChon || []).forEach(function(opt, index) {
-                const label = ['a', 'b', 'c', 'd'][index] || (index + 1);
-                const selected = q.statementSelections ? q.statementSelections[String(opt.id)] : undefined;
-                const selectedLabel = selected === true ? 'Đúng' : (selected === false ? 'Sai' : '(bỏ trống)');
-                const keyLabel = opt.la_dap_an_dung ? 'Đúng' : 'Sai';
-              %>
-                <li>
-                  <span class="katex-content"><strong><%= label %>)</strong> <%= opt.noi_dung %></span>
-                  <span>
-                    <span class="badge badge-muted">Bạn chọn: <%= selectedLabel %></span>
+        <% if (q.loaiCauHoi === 'MOT_DAP_AN') { %>
+          <ul class="answer-view-list">
+            <% (q.tuyChon || []).forEach(function(opt, index) { %>
+              <li class="<%= (choXemDapAn && opt.la_dap_an_dung) ? 'is-correct' : '' %> <%= q.dapAnDaChon && q.dapAnDaChon.id === opt.id ? 'is-selected' : '' %>">
+                <span class="katex-content"><strong><%= String.fromCharCode(65 + index) %>.</strong> <%= opt.noi_dung %></span>
+                <span>
+                  <% if (choXemDapAn && opt.la_dap_an_dung) { %><span class="badge badge-success">Đáp án đúng</span><% } %>
+                  <% if (q.dapAnDaChon && q.dapAnDaChon.id === opt.id) { %><span class="badge badge-info">Bạn đã chọn</span><% } %>
+                </span>
+              </li>
+            <% }); %>
+          </ul>
+          <% if (!q.dapAnDaChon) { %>
+            <p class="field-hint">Bạn đã bỏ trống câu này.</p>
+          <% } %>
+        <% } else if (q.loaiCauHoi === 'DUNG_SAI') { %>
+          <ul class="answer-view-list">
+            <% (q.tuyChon || []).forEach(function(opt, index) {
+              const label = ['a', 'b', 'c', 'd'][index] || (index + 1);
+              const selected = q.statementSelections ? q.statementSelections[String(opt.id)] : undefined;
+              const selectedLabel = selected === true ? 'Đúng' : (selected === false ? 'Sai' : '(bỏ trống)');
+              const keyLabel = opt.la_dap_an_dung ? 'Đúng' : 'Sai';
+            %>
+              <li>
+                <span class="katex-content"><strong><%= label %>)</strong> <%= opt.noi_dung %></span>
+                <span>
+                  <span class="badge badge-muted">Bạn chọn: <%= selectedLabel %></span>
+                  <% if (choXemDapAn) { %>
                     <span class="badge badge-success">Đáp án: <%= keyLabel %></span>
-                  </span>
-                </li>
-              <% }); %>
-            </ul>
-          <% } else if (q.loaiCauHoi === 'TRA_LOI_NGAN') { %>
-            <p><strong>Câu trả lời của bạn:</strong> <%= q.noiDungTraLoi || '(bỏ trống)' %></p>
+                  <% } %>
+                </span>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else if (q.loaiCauHoi === 'TRA_LOI_NGAN') { %>
+          <p><strong>Câu trả lời của bạn:</strong> <%= q.noiDungTraLoi || '(bỏ trống)' %></p>
+          <% if (choXemDapAn) { %>
             <p><strong>Đáp án chuẩn:</strong> <%= q.dapAnNganChuan || '—' %></p>
-          <% } else { %>
-            <div class="answer-block">
-              <span class="detail-label">Bài làm của bạn</span>
-              <div class="student-answer katex-content"><%= q.noiDungTraLoi || '(bỏ trống)' %></div>
-            </div>
           <% } %>
+        <% } else { %>
+          <div class="answer-block">
+            <span class="detail-label">Bài làm của bạn</span>
+            <div class="student-answer katex-content"><%= q.noiDungTraLoi || '(bỏ trống)' %></div>
+          </div>
+        <% } %>
 
-          <% if (q.nhanXet) { %>
-            <p><strong>Nhận xét của giáo viên:</strong> <%= q.nhanXet %></p>
-          <% } %>
+        <% if (q.nhanXet) { %>
+          <p><strong>Nhận xét của giáo viên:</strong> <%= q.nhanXet %></p>
+        <% } %>
 
-          <% if (q.loiGiai) { %>
-            <details class="inline-edit">
-              <summary>Xem lời giải</summary>
-              <div class="inline-edit-form katex-content"><%= q.loiGiai %></div>
-            </details>
-          <% } %>
+        <% if (choXemDapAn && q.loiGiai) { %>
+          <details class="inline-edit">
+            <summary>Xem lời giải</summary>
+            <div class="inline-edit-form katex-content"><%= q.loiGiai %></div>
+          </details>
         <% } %>
       </div>
     <% }); %>
