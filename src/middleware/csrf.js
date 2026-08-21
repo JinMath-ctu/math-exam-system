@@ -18,6 +18,11 @@ function shouldDeferMultipartCsrf(req) {
     return true;
   }
 
+  // Đổi/xóa ảnh (kể cả câu đã khóa nội dung)
+  if (req.method === 'POST' && /^\/teacher\/questions\/\d+\/image$/.test(path)) {
+    return true;
+  }
+
   // Form sửa: POST ?_method=PUT → PUT /teacher/questions/:id sau method-override
   if (req.method === 'PUT' && /^\/teacher\/questions\/\d+$/.test(path)) {
     return true;

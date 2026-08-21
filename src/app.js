@@ -54,7 +54,8 @@ app.use(helmet({
 app.use(morgan(isProduction ? 'combined' : 'dev'));
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
-app.use('/uploads/questions', express.static(path.join(__dirname, '..', 'uploads', 'questions')));
+const { UPLOAD_DIR } = require('./middleware/upload');
+app.use('/uploads/questions', express.static(UPLOAD_DIR));
 
 app.use(express.urlencoded({ extended: true, arrayLimit: 0 }));
 app.use(express.json());
@@ -120,6 +121,7 @@ async function startServer() {
     // 0.0.0.0: cần thiết khi deploy container (Railway/Render/Docker)
     const server = app.listen(port, '0.0.0.0', () => {
       console.log(`Máy chủ đang chạy tại http://localhost:${port}`);
+      console.log(`Thư mục ảnh câu hỏi: ${UPLOAD_DIR}`);
       startAutoSubmitJob();
       startPasswordResetCleanupJob();
       resolve(server);

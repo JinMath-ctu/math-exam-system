@@ -156,6 +156,16 @@ async function setTrangThai(id, giaoVienId, trangThai) {
   return result.affectedRows > 0;
 }
 
+/** Chỉ cập nhật anh_url — dùng khi câu hỏi đã khóa nội dung nhưng cần sửa ảnh. */
+async function updateAnhUrl(id, giaoVienId, anhUrl) {
+  const [result] = await pool.execute(
+    `UPDATE cau_hoi SET anh_url = ? WHERE id = ? AND giao_vien_id = ?`,
+    [anhUrl || null, id, giaoVienId],
+  );
+
+  return result.affectedRows > 0;
+}
+
 // "Câu đã thuộc đề công bố": đang nằm trong ít nhất một đề thi có
 // trang_thai = DA_CONG_BO tại thời điểm hiện tại.
 async function isInPublishedExam(cauHoiId) {
@@ -232,6 +242,7 @@ module.exports = {
   findByIdForTeacher,
   create,
   update,
+  updateAnhUrl,
   setTrangThai,
   isInPublishedExam,
   hasAttemptHistory,

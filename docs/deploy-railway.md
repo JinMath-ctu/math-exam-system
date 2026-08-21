@@ -134,7 +134,7 @@ Nếu deploy fail, xem **Deployments → View Logs**:
 
 ## 7. Lưu ý khi demo trên Railway
 
-- **Uploads ảnh câu hỏi** nằm trên disk container → mất khi redeploy (seed text vẫn ổn). Cần giữ ảnh lâu dài thì gắn Railway Volume vào `/app/uploads` (tuỳ chọn).
+- **Uploads ảnh câu hỏi:** gắn Volume mount tại `/app/uploads`, biến môi trường `UPLOAD_DIR=/app/uploads/questions`. Ảnh **không nằm trong Git** — DB chỉ lưu đường dẫn. Sau deploy/gắn Volume lần đầu (hoặc volume trống), vào **Chi tiết câu hỏi → Cập nhật ảnh** để upload lại (kể cả câu đã khóa nội dung). Phòng thi sẽ ẩn icon ảnh gãy nếu file chưa có.
 - **Công bố đề / giờ thi:** chỉnh thời gian đề trên UI hoặc SQL qua TCP proxy trước buổi thuyết trình (xem `docs/demo-script.md`).
 - Gói free/hobby Railway có thể **sleep** khi không traffic — mở URL trước 1–2 phút.
 - Chi phí: MySQL + Web = 2 service; theo dõi usage trên dashboard.

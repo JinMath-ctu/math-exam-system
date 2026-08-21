@@ -97,7 +97,7 @@ while (menhDeKeys.length < 4) menhDeKeys.push('');
           <label for="anh">Ảnh minh họa — đồ thị / hình học / đề từ Word</label>
           <% if (question.anh_url) { %>
             <div class="image-preview">
-              <img src="<%= question.anh_url %>" alt="Ảnh minh họa câu hỏi">
+              <img src="<%= question.anh_url %>" alt="Ảnh minh họa câu hỏi" onerror="this.closest('.image-preview')?.remove()">
             </div>
             <label class="checkbox-label"><input type="checkbox" name="xoaAnh"> Xóa ảnh hiện tại</label>
           <% } %>

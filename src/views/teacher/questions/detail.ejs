@@ -17,7 +17,7 @@ const difficultyLabels = {NHAN_BIET:'Nhận biết', THONG_HIEU:'Thông hiểu',
     <% if (locked) { %>
       <div class="flash-container">
         <div class="flash flash-info" role="status">
-          Câu hỏi này đã thuộc đề công bố hoặc đã có lịch sử làm bài nên không thể sửa hoặc xóa. Hãy sao chép thành câu mới nếu cần chỉnh sửa.
+          Nội dung câu hỏi đã khóa (thuộc đề công bố hoặc đã có lượt làm). Vẫn có thể đổi/xóa ảnh minh họa bên dưới; muốn sửa đề bài thì sao chép thành câu mới.
         </div>
       </div>
     <% } %>
@@ -52,9 +52,22 @@ const difficultyLabels = {NHAN_BIET:'Nhận biết', THONG_HIEU:'Thông hiểu',
 
       <% if (question.anh_url) { %>
         <div class="image-preview">
-          <img src="<%= question.anh_url %>" alt="Ảnh minh họa câu hỏi">
+          <img src="<%= question.anh_url %>" alt="Ảnh minh họa câu hỏi" onerror="this.closest('.image-preview')?.remove()">
         </div>
       <% } %>
+
+      <div class="form-group" style="margin-top:1rem;">
+        <h3 class="section-title">Ảnh minh họa</h3>
+        <p class="field-hint">Có thể đổi hoặc xóa ảnh ngay cả khi câu hỏi đã khóa nội dung (ảnh trên Railway cần upload lại sau khi gắn Volume).</p>
+        <form action="/teacher/questions/<%= question.id %>/image" method="POST" enctype="multipart/form-data" class="inline-form" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="file" id="anh" name="anh" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+          <% if (question.anh_url) { %>
+            <label class="checkbox-label"><input type="checkbox" name="xoaAnh"> Xóa ảnh hiện tại</label>
+          <% } %>
+          <button type="submit" class="btn btn-secondary">Cập nhật ảnh</button>
+        </form>
+      </div>
 
       <% if (question.loai_cau_hoi === 'MOT_DAP_AN') { %>
         <h3 class="section-title">Đáp án</h3>

@@ -380,6 +380,11 @@
       var image = document.createElement('img');
       image.src = String(question.image);
       image.alt = 'Ảnh minh họa câu hỏi';
+      image.addEventListener('error', function () {
+        if (imagePreview.parentNode) {
+          imagePreview.parentNode.removeChild(imagePreview);
+        }
+      });
 
       imagePreview.appendChild(image);
       card.appendChild(imagePreview);

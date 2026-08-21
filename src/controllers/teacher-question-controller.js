@@ -221,6 +221,32 @@ async function remove(req, res, next) {
   }
 }
 
+async function updateImage(req, res, next) {
+  try {
+    await questionService.updateQuestionImage({
+      id: req.params.id,
+      giaoVienId: req.session.user.id,
+      body: req.body,
+      file: getFileInfo(req),
+    });
+
+    req.flash('success', 'Đã cập nhật ảnh minh họa câu hỏi.');
+    return res.redirect(`/teacher/questions/${req.params.id}`);
+  } catch (error) {
+    await cleanupUploadedFile(req);
+    if (
+      error instanceof AppError
+      && (error.code === ERROR_CODES.VALIDATION_ERROR
+        || error.code === ERROR_CODES.NOT_FOUND
+        || error.code === ERROR_CODES.FORBIDDEN)
+    ) {
+      req.flash('error', error.message);
+      return res.redirect(`/teacher/questions/${req.params.id}`);
+    }
+    return next(error);
+  }
+}
+
 async function copy(req, res, next) {
   try {
     const newId = await questionService.copyQuestion(req.params.id, req.session.user.id);
@@ -238,6 +264,7 @@ module.exports = {
   showDetail,
   showEdit,
   update,
+  updateImage,
   remove,
   copy,
 };

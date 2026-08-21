@@ -17,6 +17,7 @@ router.post('/create', uploadQuestionImage, verifyDeferredCsrf, createRules, asy
 router.get('/:id', asyncHandler(questionController.showDetail));
 router.get('/:id/edit', asyncHandler(questionController.showEdit));
 router.put('/:id', uploadQuestionImage, verifyDeferredCsrf, updateRules, asyncHandler(questionController.update));
+router.post('/:id/image', uploadQuestionImage, verifyDeferredCsrf, asyncHandler(questionController.updateImage));
 router.post('/:id/delete', asyncHandler(questionController.remove));
 router.delete('/:id', asyncHandler(questionController.remove));
 router.post('/:id/copy', asyncHandler(questionController.copy));

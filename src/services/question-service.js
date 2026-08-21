@@ -411,6 +411,43 @@ async function copyQuestion(id, giaoVienId) {
   }
 }
 
+async function updateQuestionImage({ id, giaoVienId, body, file }) {
+  const existing = await questionRepository.findByIdForTeacher(id, giaoVienId);
+  if (!existing) {
+    throw new AppError('Không tìm thấy câu hỏi.', ERROR_CODES.NOT_FOUND);
+  }
+
+  const removeExistingImage = body.xoaAnh === 'on' || body.xoaAnh === 'true';
+  if (!file && !removeExistingImage) {
+    throw new AppError('Chọn ảnh mới hoặc tích “Xóa ảnh hiện tại”.', ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  let anhUrl = existing.anh_url;
+  if (file) {
+    anhUrl = file.relativeUrl;
+  } else if (removeExistingImage) {
+    anhUrl = null;
+  }
+
+  try {
+    const updated = await questionRepository.updateAnhUrl(id, giaoVienId, anhUrl);
+    if (!updated) {
+      throw new AppError('Không tìm thấy câu hỏi.', ERROR_CODES.NOT_FOUND);
+    }
+
+    if (file && existing.anh_url) {
+      await deleteUploadedFile(existing.anh_url);
+    } else if (removeExistingImage && !file && existing.anh_url) {
+      await deleteUploadedFile(existing.anh_url);
+    }
+  } catch (error) {
+    if (file) {
+      await deleteUploadedFile(file.relativeUrl);
+    }
+    throw error;
+  }
+}
+
 module.exports = {
   QUESTION_TYPES,
   DIFFICULTY_LEVELS,
@@ -419,6 +456,7 @@ module.exports = {
   getQuestionDetail,
   createQuestion,
   updateQuestion,
+  updateQuestionImage,
   deleteQuestion,
   copyQuestion,
   __testables: {

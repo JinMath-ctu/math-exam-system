@@ -6,7 +6,10 @@ const crypto = require('crypto');
 const multer = require('multer');
 const { AppError, ERROR_CODES } = require('../utils/errors');
 
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'questions');
+// Railway: gắn Volume tại /app/uploads và set UPLOAD_DIR=/app/uploads/questions
+const UPLOAD_DIR = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.join(__dirname, '..', '..', 'uploads', 'questions');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
